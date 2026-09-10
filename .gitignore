@@ -5,4 +5,6 @@ __pycache__/
 logs/
 data/raw/
 data/processed/
+data/final/
+data/interim/
 .DS_Store
