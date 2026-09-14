@@ -8,3 +8,4 @@ data/processed/
 data/final/
 data/interim/
 .DS_Store
+artifacts/
