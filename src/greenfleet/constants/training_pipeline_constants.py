@@ -67,6 +67,21 @@ INGESTION_METADATA_FILE = (
 )
 
 
+
+# Existing constants...
+
+DATA_VALIDATION_DIR_NAME = "02_validation"
+
+DATA_VALIDATION_ARTIFACT_DIR = (
+    ARTIFACTS_DIR / DATA_VALIDATION_DIR_NAME
+)
+
+VALIDATION_REPORT_FILE_NAME = "validation_report.json"
+
+VALIDATION_REPORT_FILE = (
+    DATA_VALIDATION_ARTIFACT_DIR / VALIDATION_REPORT_FILE_NAME
+)
+
 # ==================================================
 # COMMON FILE NAMES
 # ==================================================
