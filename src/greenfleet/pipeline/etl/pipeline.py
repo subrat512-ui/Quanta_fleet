@@ -9,7 +9,11 @@ from greenfleet.logging.logger import logger
 from greenfleet.pipeline.etl.extract import extract_data
 from greenfleet.pipeline.etl.load import load_dataframe, write_audit_report
 from greenfleet.pipeline.etl.transform import transform_dataframe
-from greenfleet.pipeline.etl.validate import DEFAULT_REQUIRED_COLUMNS, validate_dataframe
+from greenfleet.pipeline.etl.validate import (
+    CANONICAL_REQUIRED_COLUMNS,
+    DEFAULT_REQUIRED_COLUMNS,
+    validate_dataframe,
+)
 
 
 @dataclass(frozen=True)
@@ -45,6 +49,7 @@ def run_etl(
     raw = extract_data(source)
     validation = validate_dataframe(raw, required_columns)
     cleaned, transformation = transform_dataframe(raw)
+    validate_dataframe(cleaned, CANONICAL_REQUIRED_COLUMNS)
     dataset_path = load_dataframe(cleaned, destination)
 
     report_path = Path(audit_path) if audit_path else destination.with_suffix(".audit.json")

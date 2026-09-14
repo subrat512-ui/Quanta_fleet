@@ -18,15 +18,16 @@ class MongoDBLoaderTests(unittest.TestCase):
             [{"index": 1.0, "fuel": None, "speed": 12.5}],
         )
 
+    @patch("greenfleet.database.mongodb.load_dotenv")
     @patch.dict("os.environ", {}, clear=True)
-    def test_loader_requires_a_mongodb_uri(self) -> None:
-        frame = pd.DataFrame({"index": [1], "Consumer_Total_MomentaryFuel": [2.0]})
+    def test_loader_requires_a_mongodb_uri(self, _load_dotenv) -> None:
+        frame = pd.DataFrame({"record_id": ["one"], "fuel_consumption_rate": [2.0]})
 
         with self.assertRaisesRegex(ValueError, "MONGODB_URI"):
             load_dataframe_to_mongodb(frame)
 
     def test_loader_requires_a_unique_key(self) -> None:
-        frame = pd.DataFrame({"index": [1, 1], "Consumer_Total_MomentaryFuel": [2.0, 3.0]})
+        frame = pd.DataFrame({"record_id": ["one", "one"], "fuel_consumption_rate": [2.0, 3.0]})
 
         with self.assertRaisesRegex(ValueError, "non-null and unique"):
             load_dataframe_to_mongodb(frame, uri="mongodb://unused")

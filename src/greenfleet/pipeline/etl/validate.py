@@ -6,7 +6,20 @@ from typing import Iterable
 import pandas as pd
 
 
-DEFAULT_REQUIRED_COLUMNS = ("index", "Consumer_Total_MomentaryFuel")
+RAW_REQUIRED_COLUMNS = (
+    "Sailing speed",
+    "Displacement",
+    "Wind speed",
+    "Fuel consumption rate",
+    "vessel_type",
+)
+CANONICAL_REQUIRED_COLUMNS = (
+    "record_id",
+    "sailing_speed",
+    "fuel_consumption_rate",
+    "vessel_type",
+)
+DEFAULT_REQUIRED_COLUMNS = RAW_REQUIRED_COLUMNS
 
 
 @dataclass(frozen=True)
@@ -36,8 +49,13 @@ def validate_dataframe(
     missing = sorted(set(required_columns).difference(frame.columns))
     if missing:
         raise ValueError(f"Dataset is missing required columns: {missing}")
-    if not pd.api.types.is_numeric_dtype(frame["Consumer_Total_MomentaryFuel"]):
-        raise TypeError("Consumer_Total_MomentaryFuel must be numeric")
+    target_column = (
+        "Fuel consumption rate"
+        if "Fuel consumption rate" in frame.columns
+        else "fuel_consumption_rate"
+    )
+    if target_column in frame.columns and not pd.api.types.is_numeric_dtype(frame[target_column]):
+        raise TypeError(f"{target_column} must be numeric")
 
     null_counts = frame.isna().sum()
     return ValidationReport(

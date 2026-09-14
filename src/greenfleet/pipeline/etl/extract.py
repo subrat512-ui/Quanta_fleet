@@ -7,7 +7,7 @@ import pandas as pd
 from greenfleet.logging.logger import logger
 
 
-SUPPORTED_INPUT_SUFFIXES = {".parquet", ".csv"}
+SUPPORTED_INPUT_SUFFIXES = {".csv"}
 
 
 def extract_data(file_path: str | Path) -> pd.DataFrame:
@@ -23,7 +23,7 @@ def extract_data(file_path: str | Path) -> pd.DataFrame:
 
     try:
         logger.info("Extracting dataset from %s", path)
-        frame = pd.read_parquet(path) if suffix == ".parquet" else pd.read_csv(path)
+        frame = pd.read_csv(path)
     except Exception as exc:
         logger.exception("Failed to extract dataset from %s", path)
         raise RuntimeError(f"Failed to extract dataset: {path}") from exc
@@ -34,9 +34,9 @@ def extract_data(file_path: str | Path) -> pd.DataFrame:
     return frame
 
 
-def extract_parquet(file_path: str | Path) -> pd.DataFrame:
-    """Backward-compatible Parquet-specific extraction entry point."""
+def extract_csv(file_path: str | Path) -> pd.DataFrame:
+    """Extract the current GreenFleet raw CSV dataset."""
     path = Path(file_path)
-    if path.suffix.lower() != ".parquet":
-        raise ValueError("extract_parquet only accepts a .parquet file")
+    if path.suffix.lower() != ".csv":
+        raise ValueError("extract_csv only accepts a .csv file")
     return extract_data(path)

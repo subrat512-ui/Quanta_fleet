@@ -62,7 +62,7 @@ def load_dataframe_to_mongodb(
     uri: str | None = None,
     database: str | None = None,
     collection: str | None = None,
-    key_field: str = "index",
+    key_field: str = "record_id",
     batch_size: int = 1_000,
 ) -> MongoLoadResult:
     """Upsert telemetry rows into MongoDB in batches.
@@ -114,24 +114,24 @@ def load_dataframe_to_mongodb(
     return result
 
 
-def load_parquet_to_mongodb(
+def load_dataset_to_mongodb(
     source_path: str | Path,
     **options: Any,
 ) -> MongoLoadResult:
-    """Read a processed Parquet/CSV dataset and load it into MongoDB."""
+    """Read a processed CSV dataset and load it into MongoDB."""
     return load_dataframe_to_mongodb(extract_data(source_path), **options)
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Load GreenFleet telemetry into MongoDB.")
-    parser.add_argument("source", help="Processed Parquet or CSV dataset")
+    parser.add_argument("source", help="Processed CSV dataset")
     parser.add_argument("--database", help="MongoDB database; defaults to MONGODB_DATABASE or greenfleet")
     parser.add_argument("--collection", help="MongoDB collection; defaults to MONGODB_COLLECTION")
-    parser.add_argument("--key-field", default="index", help="Unique observation field (default: index)")
+    parser.add_argument("--key-field", default="record_id", help="Unique observation field (default: record_id)")
     parser.add_argument("--batch-size", type=int, default=1000, help="Bulk upsert batch size")
     arguments = parser.parse_args()
 
-    result = load_parquet_to_mongodb(
+    result = load_dataset_to_mongodb(
         arguments.source,
         database=arguments.database,
         collection=arguments.collection,

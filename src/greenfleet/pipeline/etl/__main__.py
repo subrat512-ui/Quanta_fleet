@@ -8,7 +8,7 @@ from greenfleet.pipeline.etl.pipeline import run_etl
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Run the GreenFleet ETL pipeline.")
-    parser.add_argument("source", help="Input CSV or Parquet file")
+    parser.add_argument("source", help="Input CSV file")
     parser.add_argument("output", help="Output CSV or Parquet file")
     parser.add_argument("--audit", help="Optional JSON audit-report path")
     arguments = parser.parse_args()
