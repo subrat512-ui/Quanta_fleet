@@ -82,6 +82,33 @@ VALIDATION_REPORT_FILE = (
     DATA_VALIDATION_ARTIFACT_DIR / VALIDATION_REPORT_FILE_NAME
 )
 
+
+
+
+DATA_TRANSFORMATION_DIR_NAME = "data_transformation"
+
+DATA_TRANSFORMATION_TRANSFORMED_DATA_DIR = "transformed_data"
+
+DATA_TRANSFORMATION_TRANSFORMED_TRAIN_FILE_NAME = (
+    "transformed_train.npz"
+)
+
+DATA_TRANSFORMATION_TRANSFORMED_TEST_FILE_NAME = (
+    "transformed_test.npz"
+)
+
+DATA_TRANSFORMATION_PREPROCESSOR_FILE_NAME = (
+    "preprocessor.pkl"
+)
+
+DATA_TRANSFORMATION_FEATURE_NAMES_FILE_NAME = (
+    "feature_names.json"
+)
+
+DATA_TRANSFORMATION_REPORT_FILE_NAME = (
+    "transformation_report.json"
+)
+
 # ==================================================
 # COMMON FILE NAMES
 # ==================================================
@@ -97,3 +124,39 @@ SUCCESS_MESSAGE = (
 FAILURE_MESSAGE = (
     "Data ingestion failed."
 )
+
+
+
+
+
+# ============================================================
+# Machine Learning Constants
+# ============================================================
+
+TARGET_COLUMN = "fuel_consumption_rate"
+
+TRAIN_TEST_SPLIT_RATIO = 0.2
+
+RANDOM_STATE = 42
+
+
+# ============================================================
+# Dataset Feature Columns
+# ============================================================
+
+NUMERICAL_FEATURE_COLUMNS = [
+    "sailing_speed",
+    "displacement",
+    "trim",
+    "wind_speed",
+    "wind_direction_relative",
+    "combined_wave_height",
+    "combined_wave_period",
+    "sea_current_speed",
+    "sea_current_direction_relative",
+    "sea_water_temperature",
+]
+
+CATEGORICAL_FEATURE_COLUMNS = [
+    "vessel_type",
+]

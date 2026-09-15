@@ -24,3 +24,8 @@ PyYAML
 # Progress / Utilities
 # ==============================
 tqdm
+
+
+
+scikit-learn
+
