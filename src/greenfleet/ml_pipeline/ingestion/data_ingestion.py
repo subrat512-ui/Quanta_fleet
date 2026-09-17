@@ -5,6 +5,7 @@ import pandas as pd
 
 from greenfleet.artifacts.data_ingestion_artifact import DataIngestionArtifact
 from greenfleet.config.data_ingestion_config import DataIngestionConfig
+from greenfleet.logging.logger import logger
 
 
 class DataIngestion:
@@ -12,7 +13,7 @@ class DataIngestion:
         self.config = config
 
     def initiate_data_ingestion(self) -> DataIngestionArtifact:
-        print("Starting data ingestion...")
+        logger.info("Starting data ingestion...")
 
         self.config.create_directories()
 

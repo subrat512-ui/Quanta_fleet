@@ -128,6 +128,29 @@ FAILURE_MESSAGE = (
 
 
 
+# ==================================================
+# MODEL TRAINER
+# ==================================================
+
+MODEL_TRAINER_DIR_NAME = "03_model_trainer"
+
+MODEL_TRAINER_ARTIFACT_DIR = (
+    ARTIFACTS_DIR / MODEL_TRAINER_DIR_NAME
+)
+
+MODEL_FILE_NAME = "model.pkl"
+
+PREPROCESSOR_FILE_NAME = "preprocessor.pkl"
+
+MODEL_FILE = (
+    MODEL_TRAINER_ARTIFACT_DIR / MODEL_FILE_NAME
+)
+
+PREPROCESSOR_FILE = (
+    MODEL_TRAINER_ARTIFACT_DIR / PREPROCESSOR_FILE_NAME
+)
+
+
 
 # ============================================================
 # Machine Learning Constants
@@ -143,6 +166,8 @@ RANDOM_STATE = 42
 # ============================================================
 # Dataset Feature Columns
 # ============================================================
+TARGET_COLUMN = "fuel_consumption_rate"
+
 
 NUMERICAL_FEATURE_COLUMNS = [
     "sailing_speed",
@@ -160,3 +185,15 @@ NUMERICAL_FEATURE_COLUMNS = [
 CATEGORICAL_FEATURE_COLUMNS = [
     "vessel_type",
 ]
+
+
+
+# ==================================================
+# REQUIRED DATASET COLUMNS
+# ==================================================
+
+REQUIRED_COLUMNS = (
+    NUMERICAL_FEATURE_COLUMNS
+    + CATEGORICAL_FEATURE_COLUMNS
+    + [TARGET_COLUMN]
+)

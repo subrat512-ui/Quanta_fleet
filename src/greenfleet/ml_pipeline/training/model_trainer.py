@@ -14,10 +14,10 @@ from sklearn.metrics import (
     r2_score,
 )
 
-from src.greenfleet.artifacts.model_trainer_artifact import (
+from greenfleet.artifacts.model_trainer_artifact import (
     ModelTrainerArtifact,
 )
-from src.greenfleet.config.model_trainer_config import (
+from greenfleet.config.model_trainer_config import (
     ModelTrainerConfig,
 )
 
