@@ -45,28 +45,72 @@ Fitness / feasibility result
 
 ## Current implementation
 
-The repository currently provides the data-foundation layer:
+The repository currently contains a data-foundation layer, partial ML training code, and a separate UI prototype:
 
 - CSV and Parquet dataset extraction.
 - Dataset validation, cleaning, transformation, and audit reporting.
 - Command-line ETL workflow.
 - Idempotent batched MongoDB loading of processed vessel telemetry.
 - Structured logging and automated tests for the current pipeline.
+- ML ingestion, validation, preprocessing, and regression-training components under `ml_pipeline/`, with integration gaps described below.
+- A Streamlit prototype in `app.py`, branded "Green Quanta", with editable fleet and route tables and demonstration results.
 
-Prediction models, fleet-domain objects, the shared optimizer evaluator, GA, quantum-inspired optimization, scenarios, benchmarking, FastAPI, and the React dashboard are planned next. See the roadmap below.
+The Streamlit results are hard-coded or synthetic; its Run Optimization button does not invoke a trained model or optimizer. Fleet-domain objects, prediction serving, the shared optimizer evaluator, GA, quantum-inspired optimization, scenarios, benchmarking, FastAPI, and the React dashboard are planned.
 
 ## Project layout
 
 ```text
-src/greenfleet/
-├── database/              # MongoDB telemetry ingestion
-├── entity/                # Data schemas
-├── exception/             # Project exceptions
-├── logging/               # Shared logging setup
-└── pipeline/etl/          # Extract, validate, transform, load workflow
-tests/                     # ETL and MongoDB loader tests
-data/                      # Local datasets (raw/processed paths are ignored)
+Quanta_fleet/
+├── src/greenfleet/         # Importable Python package (src layout)
+│   ├── artifacts/         # Python stage-result classes; not generated datasets
+│   ├── config/            # Configuration objects for each ML stage
+│   ├── constants/         # Dataset paths, feature names, target, defaults
+│   ├── database/          # Batched MongoDB upserts and CLI
+│   ├── entity/            # VesselRecord telemetry dataclass
+│   ├── exception/         # Shared exception utility
+│   ├── logging/           # Shared Python logging setup
+│   ├── pipeline/etl/      # File extraction, validation, cleaning, export
+│   └── ml_pipeline/       # In-progress model-training workflow
+│       ├── ingestion/     # Copy source data and record metadata
+│       ├── validation/    # Check training schema and data quality
+│       ├── transformation/ # Split data, preprocess, persist arrays
+│       ├── training/      # Compare regressors and save best model
+│       ├── pipeline.py   # Orchestrates ingestion through transformation
+│       └── pipeline2.py  # Alternative orchestration including training
+├── tests/                 # ETL and MongoDB loader unit tests
+├── app.py                 # Standalone Streamlit demonstration
+├── test.py                # Manual CSV inspection script, requires local data
+├── setup.py               # Installs greenfleet from src/
+├── requirements.txt       # Core dependencies
+├── README.md              # User-facing setup, structure, and status
+└── AGENTS.md              # Contributor guidance and long-term design
 ```
+
+Local `data/` holds datasets; root `artifacts/` holds generated pipeline outputs; `logs/` holds runtime logs. These differ from the Python classes in `src/greenfleet/artifacts/`. The checkout also contains environment/package metadata (`.greenfleet/`, `greenfleet.egg-info/`), which is not application source. Create your own environment rather than relying on the checked-in environment.
+
+### How the pieces connect
+
+```text
+Source CSV/Parquet -> pipeline/etl -> cleaned dataset + JSON audit
+                                           |
+                                           +-> database -> MongoDB (optional)
+
+Prepared training CSV -> ml_pipeline/ingestion -> validation
+                        -> transformation -> training (integration incomplete)
+
+app.py -> Streamlit demo with synthetic results (separate from both pipelines)
+```
+
+ETL normalizes column names, removes duplicate rows, fills missing values, and creates a `record_id`. ML transformation handles the train/test split, numeric imputation/scaling, categorical encoding, and saved preprocessing artifacts. The trainer compares Linear Regression, Random Forest, and Gradient Boosting using MAE, RMSE, and R-squared, selecting the highest test R-squared. A separate validation strategy is still needed before treating that score as an unbiased final evaluation.
+
+### Current ML integration gaps
+
+- Validation, transformation, and trainer artifact modules exist locally but are not tracked in Git. The broad `artifacts/` ignore rule also matches the source-package directory, so a fresh clone lacks these imports.
+- `model_trainer_config.py` imports `TRANSFORMED_TRAIN_FILE` and `TRANSFORMED_TEST_FILE`, which are not defined in the constants module.
+- `pipeline.py` stops after transformation. `pipeline2.py` attempts training but passes constructor arguments and reads artifact fields that do not match the current stage interfaces.
+- `PROJECT_ROOT` in the constants module currently resolves to `src/`, so default data/artifact paths differ from the repository-root paths implied by their names.
+
+The ML workflow is therefore not a supported end-to-end command yet. Its configured target is `fuel_consumption_rate`; confirm the source dataset, units, and target semantics before interpreting predictions.
 
 ## Getting started
 
@@ -78,8 +122,8 @@ data/                      # Local datasets (raw/processed paths are ignored)
 ### Install
 
 ```bash
-git clone <your-repository-url>
-cd SIH
+git clone https://github.com/subrat512-ui/Quanta_fleet.git
+cd Quanta_fleet
 
 python -m venv .venv
 source .venv/bin/activate        # Windows: .venv\Scripts\activate
@@ -90,6 +134,8 @@ pip install -e .
 ### Run the ETL pipeline
 
 The ETL command reads a source CSV, validates and normalizes it, writes the processed dataset, and produces an audit report.
+
+Supply your own source file. The default input schema requires `Sailing speed`, `Displacement`, `Wind speed`, `Fuel consumption rate`, and `vessel_type`; the fuel column must be numeric. This command expects raw input, not a previously normalized output containing `record_id`. Parquet support requires an engine such as `pyarrow`.
 
 ```bash
 python -m greenfleet.pipeline.etl \
@@ -121,9 +167,24 @@ python -m greenfleet.database \
 
 ### Run tests
 
+The existing tests use standard-library `unittest` and mock database access; no live MongoDB server is required.
+
 ```bash
-python -m pytest
+python -m unittest discover -s tests -v
 ```
+
+Alternatively, install `pytest` separately and run `python -m pytest tests/`.
+
+### Run the UI prototype
+
+Streamlit is not currently listed in `requirements.txt`. Install it separately:
+
+```bash
+python -m pip install streamlit
+python -m streamlit run app.py
+```
+
+Open the URL printed by Streamlit (normally `http://localhost:8501`). Displayed savings, feasibility labels, and fleet assignments are demonstration data, not verified optimization results.
 
 ## Planned architecture
 
@@ -148,7 +209,7 @@ ML model  GA + Quantum-inspired search
 
 ## Roadmap
 
-1. Complete data analysis, feature engineering, and fuel-prediction baselines.
+1. Repair ML artifact tracking, configuration paths, and stage interfaces; validate dataset/target semantics and complete fuel-prediction baselines.
 2. Define fleet, vessel, voyage, fuel, solution, objectives, and constraints.
 3. Implement the shared evaluator and a reproducible Genetic Algorithm baseline.
 4. Add the isolated quantum-inspired encoding, sampling, and update engine.
@@ -165,9 +226,10 @@ ML model  GA + Quantum-inspired search
 | Data ingestion | Hugging Face Datasets |
 | Storage | MongoDB / PyMongo |
 | Configuration | python-dotenv, PyYAML |
-| Planned ML | scikit-learn, XGBoost, MLflow |
+| ML components | scikit-learn; XGBoost and MLflow are planned |
+| UI prototype | Streamlit (installed separately) |
 | Planned API and UI | FastAPI, React, TypeScript, Plotly, Tailwind CSS |
-| Testing | pytest |
+| Testing | unittest; optional pytest runner |
 
 ## Contributing
 

@@ -2,6 +2,90 @@
 
 > Quantum-Inspired Decision Support System for Green Fleet Management
 
+## Repository Guidance: Current Implementation
+
+Read this section before the product design below. Sections 1-25 describe the
+target platform and its requirements; they do not claim that all modules exist.
+Use the current `src/greenfleet/` layout for changes. Do not create or migrate to
+the illustrative `app/` tree merely to match the long-term architecture.
+
+### Current Structure and Ownership
+
+| Path | Responsibility |
+| --- | --- |
+| `src/greenfleet/pipeline/etl/` | File extraction, schema validation, normalization, cleaning, dataset export, audit reports, CLI |
+| `src/greenfleet/database/` | MongoDB conversion, unique-key validation, batched upserts, CLI |
+| `src/greenfleet/ml_pipeline/` | In-progress ingestion, validation, preprocessing, regression training, and two orchestration variants |
+| `src/greenfleet/config/` | ML stage configuration objects |
+| `src/greenfleet/constants/` | Paths, required columns, feature lists, target, default parameters |
+| `src/greenfleet/artifacts/` | Python result/metadata classes passed between stages |
+| `src/greenfleet/entity/` | Existing `VesselRecord` telemetry schema; not fleet optimization domain models |
+| `src/greenfleet/logging/`, `exception/` | Shared logging and exception helpers |
+| `tests/` | ETL and MongoDB loader unit tests |
+| `app.py` | Standalone Streamlit UI demo with hard-coded/synthetic output |
+| `test.py` | Manual inspection of a local CSV, not the automated test suite |
+| `setup.py`, `requirements.txt` | Package installation and core dependencies |
+
+Root `artifacts/` contains generated outputs and is distinct from source classes
+in `src/greenfleet/artifacts/`. Local data and logs are runtime inputs/outputs.
+`.greenfleet/` and `greenfleet.egg-info/` are environment/package metadata, not
+application modules. Avoid editing or adding generated environment files.
+
+### Implementation Status and Known Gaps
+
+- ETL and MongoDB loading have implementations and focused unit tests.
+- ML stages exist, but the training workflow is not yet integrated reliably.
+  `pipeline.py` ends at transformation; `pipeline2.py` attempts training with
+  stage constructor arguments and artifact fields that do not match the current
+  components. Reconcile these interfaces before documenting a working trainer CLI.
+- Validation, transformation, and trainer artifact modules are local-only:
+  the `artifacts/` ignore pattern also matches the Python source directory.
+  Only the artifact package initializer, base class, and ingestion class are
+  currently tracked. Fresh clones therefore lack required imports.
+- `model_trainer_config.py` imports undefined `TRANSFORMED_TRAIN_FILE` and
+  `TRANSFORMED_TEST_FILE` constants. `PROJECT_ROOT` currently resolves to `src/`
+  rather than the repository root. Verify paths before running ML stages.
+- The configured ML target is `fuel_consumption_rate`; establish units and
+  source semantics through dataset analysis. The older `VesselRecord` schema
+  uses `total_momentary_fuel` and should not be assumed interchangeable.
+- Streamlit is an optional install not listed in `requirements.txt`. The demo
+  does not call the ML pipeline or any real optimizer; never cite its numbers
+  as benchmark, feasibility, or emissions evidence.
+- Shared fleet evaluation, GA, quantum-inspired search, scenarios, benchmarking,
+  prediction serving, FastAPI, React, MLflow integration, and Docker deployment
+  remain planned work.
+
+### Development Commands
+
+From the repository root, use a dedicated Python 3.10+ environment:
+
+```bash
+python -m pip install -r requirements.txt
+python -m pip install -e .
+python -m unittest discover -s tests -v
+python -m greenfleet.pipeline.etl --help
+python -m greenfleet.database --help
+```
+
+The tests mock database access. `pytest` is an optional runner installed
+separately; use `python -m pytest tests/`. To run the demo, install `streamlit`
+and use `python -m streamlit run app.py`. See README.md for dataset prerequisites
+and MongoDB environment variables. Do not run `test.py` as a general test command.
+
+### Change Guidelines
+
+- Keep ETL cleaning, ML preprocessing/training, persistence, and UI concerns in
+  their existing modules. Preserve the shared-evaluator requirement below when
+  adding optimization; UI and search algorithms must not duplicate domain math.
+- Keep README.md aligned with tracked source and separate implemented behavior,
+  prototypes, integration gaps, and planned features.
+- Add focused tests for behavior changes. Document validation limitations when
+  dependencies or external services are unavailable.
+- Do not commit credentials, local datasets, model outputs, archives, or new
+  environment files. Stage explicit task files; preserve unrelated user changes.
+- Repair the ML foundation before extending the downstream platform. Do not
+  implement the entire roadmap as part of a documentation or small feature task.
+
 ## 1. Project Overview
 
 GreenFleet AI is a modular software platform for sustainable maritime
@@ -538,7 +622,13 @@ ML Prediction Model      |           |                 |
 
 # 15. Low-Level Architecture
 
-## Repository
+## Planned Repository (Conceptual)
+
+This tree illustrates future responsibilities, not the current checkout.
+The current repository uses `src/greenfleet/`, as documented above; introducing
+new modules should follow that package layout unless an explicit migration is
+requested. The root `app.py` is a Streamlit prototype, not this proposed `app/`
+backend package.
 
 ``` text
 greenfleet/
