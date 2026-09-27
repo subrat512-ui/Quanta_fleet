@@ -1,5 +1,6 @@
 from pathlib import Path
 from typing import Any
+import json
 
 import joblib
 import numpy as np
@@ -13,6 +14,7 @@ from sklearn.metrics import (
     mean_squared_error,
     r2_score,
 )
+from xgboost import XGBRegressor
 
 from greenfleet.artifacts.model_trainer_artifact import (
     ModelTrainerArtifact,
@@ -62,6 +64,18 @@ class ModelTrainer:
                 max_depth=3,
                 random_state=42,
             ),
+
+            "XGBRegressor": XGBRegressor(
+                n_estimators=200,
+                learning_rate=0.05,
+                max_depth=3,
+                subsample=0.9,
+                colsample_bytree=0.9,
+                objective="reg:squarederror",
+                random_state=42,
+                n_jobs=-1,
+                verbosity=0,
+            ),
         }
 
     def _evaluate_model(
@@ -106,6 +120,7 @@ class ModelTrainer:
             best_model = None
             best_model_name = None
             best_metrics = None
+            all_metrics: dict[str, dict[str, float]] = {}
 
             print("\nStarting model training...")
             print(f"X_train shape: {X_train.shape}")
@@ -126,6 +141,7 @@ class ModelTrainer:
                     X_test,
                     y_test,
                 )
+                all_metrics[model_name] = metrics
 
                 print(
                     f"MAE: {metrics['mae']:.4f}"
@@ -156,9 +172,14 @@ class ModelTrainer:
                 model_path,
             )
 
+            metrics_path = self.config.model_dir / "model_metrics.json"
+            with metrics_path.open("w", encoding="utf-8") as file:
+                json.dump(all_metrics, file, indent=2)
+
             print("\nBest model selected:")
             print(best_model_name)
             print(f"Saved at: {model_path}")
+            print(f"Metrics saved at: {metrics_path}")
 
             return ModelTrainerArtifact(
                 trained_model_file_path=model_path,
@@ -167,6 +188,7 @@ class ModelTrainer:
                 rmse=best_metrics["rmse"],
                 r2_score=best_metrics["r2_score"],
                 is_training_successful=True,
+                metrics=all_metrics,
                 message=(
                     "Model training completed successfully."
                 ),
@@ -181,4 +203,5 @@ class ModelTrainer:
                 r2_score=0.0,
                 is_training_successful=False,
                 message=str(error),
+                metrics=None,
             )

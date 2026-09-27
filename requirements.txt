@@ -8,6 +8,7 @@ numpy
 # Data Ingestion
 # ==============================
 datasets
+huggingface_hub
 
 # ==============================
 # Database
@@ -28,4 +29,5 @@ tqdm
 
 
 scikit-learn
+xgboost
 joblib
