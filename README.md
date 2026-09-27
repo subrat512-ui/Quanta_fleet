@@ -75,8 +75,7 @@ Quanta_fleet/
 │       ├── validation/    # Check training schema and data quality
 │       ├── transformation/ # Split data, preprocess, persist arrays
 │       ├── training/      # Compare regressors and save best model
-│       ├── pipeline.py   # Orchestrates ingestion through transformation
-│       └── pipeline2.py  # Alternative orchestration including training
+│       └── pipeline.py   # Sole legacy ML orchestrator; FuelCast flow pending
 ├── tests/                 # ETL and MongoDB loader unit tests
 ├── app.py                 # Standalone Streamlit demonstration
 ├── test.py                # Manual CSV inspection script, requires local data
@@ -103,14 +102,11 @@ app.py -> Streamlit demo with synthetic results (separate from both pipelines)
 
 ETL normalizes column names, removes duplicate rows, fills missing values, and creates a `record_id`. ML transformation handles the train/test split, numeric imputation/scaling, categorical encoding, and saved preprocessing artifacts. The trainer compares Linear Regression, Random Forest, and Gradient Boosting using MAE, RMSE, and R-squared, selecting the highest test R-squared. A separate validation strategy is still needed before treating that score as an unbiased final evaluation.
 
-### Current ML integration gaps
+### Current ML integration status
 
-- Validation, transformation, and trainer artifact modules exist locally but are not tracked in Git. The broad `artifacts/` ignore rule also matches the source-package directory, so a fresh clone lacks these imports.
-- `model_trainer_config.py` imports `TRANSFORMED_TRAIN_FILE` and `TRANSFORMED_TEST_FILE`, which are not defined in the constants module.
-- `pipeline.py` stops after transformation. `pipeline2.py` attempts training but passes constructor arguments and reads artifact fields that do not match the current stage interfaces.
-- `PROJECT_ROOT` in the constants module currently resolves to `src/`, so default data/artifact paths differ from the repository-root paths implied by their names.
+`ml_pipeline/pipeline.py` is the only ML orchestration entry point. It runs the existing ingestion, validation, and transformation stages. The incompatible `pipeline2.py` path was removed. Source artifact classes are tracked separately from generated root `artifacts/`, and configured paths resolve from the repository root.
 
-The ML workflow is therefore not a supported end-to-end command yet. Its configured target is `fuel_consumption_rate`; confirm the source dataset, units, and target semantics before interpreting predictions.
+This legacy ML path is not the FuelCast training pipeline yet. It still expects the older `fuel_consumption_rate` schema and uses a random train/test split. Do not use its output as FuelCast benchmark evidence. The documented FuelCast source, canonical target, chronological split, and model training will be added in their assigned phases under `docs/specs/phases/`.
 
 ## Getting started
 

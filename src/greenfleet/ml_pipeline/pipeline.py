@@ -1,4 +1,9 @@
+"""Legacy ML stage orchestrator and the sole pipeline entry point.
 
+FuelCast end-to-end orchestration will replace this flow in Phase 9.
+"""
+
+import argparse
 from pathlib import Path
 from greenfleet.constants.training_pipeline_constants import (
     DATA_INGESTION_ARTIFACT_DIR,
@@ -332,7 +337,13 @@ class GreenFleetPipeline:
         return data_transformation_artifact
 
 
-if __name__ == "__main__":
-    pipeline = GreenFleetPipeline()
+def main(argv=None):
+    parser = argparse.ArgumentParser(
+        description="Run the existing GreenFleet ML stages (FuelCast support is pending)."
+    )
+    parser.parse_args(argv)
+    return GreenFleetPipeline().run_pipeline()
 
-    pipeline.run_pipeline()
+
+if __name__ == "__main__":
+    main()
