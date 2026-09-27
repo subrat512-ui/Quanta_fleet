@@ -296,7 +296,7 @@ commit and local removal of the ignored run directory if needed.
   schema, uniqueness, ordering, count reconciliation and Git ignore were checked.
 - Original Phase 2 commit `c4235e2` was pushed to
   `origin/feat/fuelcast-e2e-pipeline`. The clean replay commit is `50dd953`;
-  its push is pending.
+  it was pushed on `feat/fuelcast-e2e-clean`.
 
 ## Clean branch recovery
 
@@ -313,4 +313,5 @@ and the unrelated classical commit. The necessary transformation path constants
 from `c61bd08` were included in the clean Phase 0 replay because the baseline
 model-training configuration imports them. The original branch and commits are
 preserved. Full offline tests passed (26/26), and the clean comparison changes
-33 files without generated-file deletions. Push state: pending.
+33 files without generated-file deletions. The clean branch was pushed and
+draft replacement PR #3 opened. Oversized PR #2 remains open and unchanged.

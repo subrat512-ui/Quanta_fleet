@@ -3,7 +3,7 @@
 ## Status
 
 - Current phase: Phase 3 — MongoDB loading (planning pending)
-- State: Phase 2 ETL replayed and verified on a clean branch; push pending
+- State: Phase 2 ETL replayed and verified on a clean branch; draft PR #3 open
 - Last completed phase: Phase 2 — FuelCast ETL
 - Current branch: `feat/fuelcast-e2e-clean`
 
@@ -111,7 +111,7 @@ documentation commit.
 - Phase 3 entry: read its spec and prepare a fresh approved plan. The existing
   MongoDB contains previously merged synthetic data; do not treat it as the
   FuelCast canonical load. No MongoDB state was changed in Phase 2.
-- Phase 2 replay commit: `50dd953` on `feat/fuelcast-e2e-clean`; push pending.
+- Phase 2 replay commit: `50dd953` on `feat/fuelcast-e2e-clean`; pushed.
 
 ## Clean branch recovery
 
@@ -126,6 +126,8 @@ documentation commit.
   the superseded `pipeline2.py`.
 - Full offline suite: 26/26 passed in the separate worktree. The original
   worktree's uncommitted files remain untouched.
+- The clean branch was pushed to `origin/feat/fuelcast-e2e-clean`; draft
+  replacement PR #3 is open. Oversized PR #2 and its branch remain unchanged.
 
 ## Required Phase 0 evidence
 
