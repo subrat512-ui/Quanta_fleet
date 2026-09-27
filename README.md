@@ -217,6 +217,35 @@ ML model  GA + Quantum-inspired search
 6. Expose services through FastAPI, then build the React decision-support dashboard.
 7. Package the full stack with Docker and deployment automation.
 
+## Quantum-inspired fuel prediction prototype
+
+The repository includes a separate QPSO-tuned RBF Support Vector Regression
+trainer. Quantum-behaved particle swarm optimization searches the SVR `C`,
+`gamma`, and `epsilon` values on classical hardware. Preprocessing is fitted
+inside every validation fold, and the final artifact contains both preprocessing
+and prediction steps.
+
+Train with the default project feature schema:
+
+```bash
+python -m greenfleet.ml_pipeline.quantum data/final/maritime_fuel_clean.csv
+```
+
+For a smaller prototype schema, provide comma-separated feature lists:
+
+```bash
+python -m greenfleet.ml_pipeline.quantum synthetic_fleet.csv \
+  --target fuel_tonnes_per_day \
+  --numerical-features speed_knots,load_fraction,wind_speed_ms,wave_height_m \
+  --categorical-features vessel_type \
+  --group-column voyage_id
+```
+
+Outputs are written to `artifacts/04_quantum_model/` by default. The JSON report
+records held-out MAE, RMSE, R-squared, validation MAE, search parameters, search
+history, and data-quality warnings. With synthetic data, these scores measure how
+well the model reproduces the simulator and are not evidence of field accuracy.
+
 ## Technology stack
 
 | Area | Tools |
