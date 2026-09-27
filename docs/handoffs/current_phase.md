@@ -2,9 +2,9 @@
 
 ## Status
 
-- Current phase: Phase 2 — FuelCast ETL (not started)
-- State: Phase 1 implementation, offline tests, live source check and independent reviews passed; scoped commit and push pending
-- Last completed phase: Phase 1 — FuelCast ingestion
+- Current phase: Phase 3 — MongoDB loading (planning pending)
+- State: Phase 2 ETL implemented and reviewed; scoped commit and push pending
+- Last completed phase: Phase 2 — FuelCast ETL
 - Current branch: `feat/fuelcast-e2e-pipeline`
 
 ## Approved scope
@@ -78,10 +78,35 @@ documentation commit.
   Counts: `cps_poseidon` 105,422; `cps_triton` 25,351; `oss_ceto` 43,213;
   total 173,986. CSV counts and SHA-256 were verified against the manifest.
   Generated files are ignored; do not commit or redistribute them.
-- Phase 2 entry: read its spec, make a fresh approved plan, consume this raw
-  snapshot contract, and implement canonical ETL with row-level audit. No
-  Phase 2 implementation has begun.
-- Phase 1 commit and push: pending final staged-diff gate.
+- Phase 2 entry conditions were met; the ETL implementation is described below.
+- Phase 1 commit: `5336068` (`feat(data): add FuelCast source ingestion`).
+  Pushed to `origin/feat/fuelcast-e2e-pipeline` on 2026-09-28. This SHA update
+  was written after the push and remains local for the next scoped documentation
+  commit.
+
+## Phase 2 handoff
+
+- New API: `run_fuelcast_etl(run_dir: Path) -> FuelCastETLArtifact` in
+  `greenfleet.pipeline.etl.fuelcast`; CLI:
+  `python -m greenfleet.pipeline.etl.fuelcast --run-id NAME`.
+- Source manifest and snapshot are validated before transformation. The stage
+  writes the approved 11-column canonical CSV and reconciled audit, preserving
+  missing features and dropping invalid targets/times. Exact raw duplicates
+  are counted; conflicting vessel/time keys fail. Each vessel must retain at
+  least one valid row. The legacy ETL command and behavior remain separate.
+- The `02_etl` path is an atomic symlink to a complete hidden backing directory
+  within the run. Rollback/removal of local output must remove both paths.
+- Selected run: `fuelcast-phase1-20260928-002`, revision
+  `eb6a6ec011c1c9a2cbce21459e22be4c77ef84dd`. Canonical counts:
+  105,422 Poseidon; 25,347 Triton; 43,205 Ceto; 173,974 total. Twelve missing
+  time indexes were dropped; no target or duplicate rows were dropped.
+- Focused tests 10/10; full offline suite 26/26; both ETL help commands,
+  output invariants, byte reproduction, Git ignore and diff check passed.
+  Independent read-only test and reviewer gates: PASS.
+- Phase 3 entry: read its spec and prepare a fresh approved plan. The existing
+  MongoDB contains previously merged synthetic data; do not treat it as the
+  FuelCast canonical load. No MongoDB state was changed in Phase 2.
+- Phase 2 commit and push: pending final staged-diff gate.
 
 ## Required Phase 0 evidence
 
