@@ -9,8 +9,8 @@
 
 | Phase | Name | Status | Depends on |
 | --- | --- | --- | --- |
-| 0 | Foundation | in_progress | none |
-| 1 | FuelCast ingestion | pending | 0 |
+| 0 | Foundation | passed | none |
+| 1 | FuelCast ingestion | passed | 0 |
 | 2 | ETL | pending | 1 |
 | 3 | MongoDB | pending | 2 |
 | 4 | Split and preprocessing | pending | 2 |
@@ -162,6 +162,50 @@ git diff --check
 Run a separately authorized integration command for live FuelCast download and
 MongoDB loading.
 
+## Approved Phase 1 plan — FuelCast ingestion
+
+Authorization: the user supplied and approved this Phase 1 plan. Phase 0 commit
+`1fdb30d` is pushed; its local SHA handoff edits will be included in this phase.
+
+### Files and interfaces
+
+- Add `src/greenfleet/constants/fuelcast.py` with dataset identity, ordered
+  configurations, required source fields and raw snapshot column order.
+- Add `src/greenfleet/artifacts/fuelcast_source_artifact.py` with snapshot and
+  manifest paths, resolved Hub SHA and per-vessel row counts.
+- Add `src/greenfleet/data_sources/{__init__,fuelcast,__main__}.py` exposing
+  `ingest_fuelcast(run_dir: Path, revision: str | None = None) ->
+  FuelCastSourceArtifact` and a `--run-id`/`--revision` CLI. The run writes
+  `01_source/fuelcast_raw.csv` and `source_manifest.json` beneath `/artifacts/`.
+- Resolve the dataset revision once with `HfApi.dataset_info`, pass the resolved
+  SHA to configuration discovery and all three `train` loads, and reject missing
+  expected configurations. Validate each declared Arrow schema before rows are
+  converted: exact required names, integral `index`, numeric feature/target
+  fields. Preserve row order and invalid values for ETL. Fingerprint ordered
+  source name/type pairs and hash the final snapshot. Publish both outputs only
+  after all loads succeed; refuse an existing run directory.
+- Add `huggingface_hub` to `requirements.txt` and document the source command,
+  provenance, license and phase boundary in `README.md`. No existing data or
+  model contract is migrated in this phase.
+
+### Tests and validation
+
+Add `tests/test_fuelcast_source.py` with mocked Hub calls and three synthetic
+configurations. Cover missing config/column, wrong declared type, SHA pinning,
+output order and null preservation, counts, fingerprints, frozen timestamp,
+overwrite refusal and no partial published output. Run focused and full offline
+unittest suites, CLI `--help`, `git diff --check`, and staged diff checks. Then
+run a unique live source CLI invocation and verify counts, hashes and ignore
+behavior. Independent read-only test and reviewer agents gate the scoped commit
+and push.
+
+### Risks and rollback
+
+Hub outages or schema changes fail clearly without publishing a snapshot. The
+reported 173,986 rows is context, not an assertion. Do not commit source rows,
+credentials, caches or runtime artifacts. Rollback is a revert of the Phase 1
+commit and local removal of the ignored run directory if needed.
+
 ## Phase 0 gate results
 
 - Branch: `feat/fuelcast-e2e-pipeline`.
@@ -173,4 +217,22 @@ MongoDB loading.
   directories were removed from the Git index.
 - Staged scope includes the three imported Python artifact classes and excludes
   unrelated `AGENTS.md`, `.codex/`, and original `fuelcast_codex_docs/` changes.
-- Phase 0 feature commit: pending. Push: pending. SHA: pending.
+- Phase 0 feature commit: `1fdb30d` (`chore(pipeline): repair training foundation`).
+  Pushed to `origin/feat/fuelcast-e2e-pipeline` on 2026-09-28.
+- This SHA record was written after the push and is a local handoff update;
+  it will be included in the next scoped documentation commit rather than
+  creating a second Phase 0 commit or rewriting the pushed one.
+
+## Phase 1 gate results
+
+- Focused source tests: 5/5 passed; full offline suite: 16/16 passed with
+  `.greenfleet/bin/python`. Source CLI `--help` and `git diff --check` passed.
+- Independent read-only test agent: PASS. Independent read-only reviewer: PASS;
+  no blocker or major findings. Combined fingerprint coverage was added after
+  review and the full suite reran successfully.
+- Live source run: `fuelcast-phase1-20260928-002`, pinned Hub SHA
+  `eb6a6ec011c1c9a2cbce21459e22be4c77ef84dd`; counts were 105,422
+  `cps_poseidon`, 25,351 `cps_triton`, 43,213 `oss_ceto` (173,986 total).
+  Manifest counts matched CSV rows, snapshot SHA-256 matched, and both outputs
+  were ignored by Git. The generated run remains local under `/artifacts/`.
+- Scoped commit and push: pending final staged-diff gate.

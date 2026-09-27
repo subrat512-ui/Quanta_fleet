@@ -8,6 +8,7 @@ numpy
 # Data Ingestion
 # ==============================
 datasets
+huggingface_hub
 
 # ==============================
 # Database
