@@ -3,9 +3,14 @@
 ## Status
 
 - Current phase: Phase 3 — MongoDB loading (planning pending)
-- State: Phase 2 ETL implemented and reviewed; scoped commit and push pending
+- State: Phase 2 ETL replayed and verified on a clean branch; push pending
 - Last completed phase: Phase 2 — FuelCast ETL
-- Current branch: `feat/fuelcast-e2e-pipeline`
+- Current branch: `feat/fuelcast-e2e-clean`
+
+The phase records below describe the original branch. The clean recovery
+branch excludes its tracked environment and runtime-output deletions and the
+unrelated `classical training algorithm` commit. The original branch and its
+commit IDs remain intact.
 
 ## Approved scope
 
@@ -106,7 +111,21 @@ documentation commit.
 - Phase 3 entry: read its spec and prepare a fresh approved plan. The existing
   MongoDB contains previously merged synthetic data; do not treat it as the
   FuelCast canonical load. No MongoDB state was changed in Phase 2.
-- Phase 2 commit and push: pending final staged-diff gate.
+- Phase 2 replay commit: `50dd953` on `feat/fuelcast-e2e-clean`; push pending.
+
+## Clean branch recovery
+
+- Base: `origin/main` at `026572d`. Original commits `1fdb30d`, `5336068`
+  and `c4235e2` remain on `feat/fuelcast-e2e-pipeline`.
+- Scoped replay commits: Phase 0 `9f527bb`, Phase 1 `dff071a`, and Phase 2
+  `50dd953`. Phase 0 also carries the two transformation path constants needed
+  by the baseline model-training config, without importing the classical
+  trainer commit.
+- Comparison with `origin/main`: 33 files. No `.greenfleet/`, `artifacts/`,
+  `greenfleet.egg-info/` or `artifacts.zip` changes. The sole deleted file is
+  the superseded `pipeline2.py`.
+- Full offline suite: 26/26 passed in the separate worktree. The original
+  worktree's uncommitted files remain untouched.
 
 ## Required Phase 0 evidence
 

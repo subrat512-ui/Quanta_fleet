@@ -294,4 +294,23 @@ commit and local removal of the ignored run directory if needed.
   indexes were removed, with no target or duplicate removals. A fresh run from
   copied Phase 1 inputs produced a byte-identical canonical CSV. Output hash,
   schema, uniqueness, ordering, count reconciliation and Git ignore were checked.
-- Scoped staged-diff gate, feature commit and push: pending final gate.
+- Original Phase 2 commit `c4235e2` was pushed to
+  `origin/feat/fuelcast-e2e-pipeline`. The clean replay commit is `50dd953`;
+  its push is pending.
+
+## Clean branch recovery
+
+The oversized original PR comparison was caused by Phase 0 removing 15,895
+tracked `.greenfleet/` files, four `greenfleet.egg-info/` files and two
+`artifacts/01_ingestion/` files. The feature branch also inherited local main
+commit `c61bd08` (`classical training algorithm`), which is absent from
+`origin/main`.
+
+The approved recovery uses a separate worktree and a new branch from
+`origin/main` (`026572d`). It replays the three reviewed phases in scoped
+commits `9f527bb`, `dff071a` and `50dd953`, excluding generated-file deletions
+and the unrelated classical commit. The necessary transformation path constants
+from `c61bd08` were included in the clean Phase 0 replay because the baseline
+model-training configuration imports them. The original branch and commits are
+preserved. Full offline tests passed (26/26), and the clean comparison changes
+33 files without generated-file deletions. Push state: pending.
