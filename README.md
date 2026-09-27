@@ -139,7 +139,21 @@ python -m greenfleet.data_sources --run-id fuelcast-20260928
 python -m greenfleet.data_sources --run-id fuelcast-pinned --revision <revision>
 ```
 
-FuelCast is licensed [CC BY-NC-ND 4.0](https://huggingface.co/datasets/krohnedigital/FuelCast/blob/main/README.md). Use it only in the authorized project context. Do not commit or redistribute downloaded rows. This stage keeps missing and invalid values for the later canonical ETL audit; it does not produce training data or model results.
+FuelCast is licensed [CC BY-NC-ND 4.0](https://huggingface.co/datasets/krohnedigital/FuelCast/blob/main/README.md). Use it only in the authorized project context. Do not commit or redistribute downloaded rows. The source stage preserves missing and invalid values for the canonical ETL audit.
+
+### Canonicalize a FuelCast source run
+
+```bash
+python -m greenfleet.pipeline.etl.fuelcast --run-id fuelcast-20260928
+```
+
+This validates the pinned source manifest and snapshot, then writes
+`artifacts/<run-id>/02_etl/fuelcast_clean.csv` and `etl_audit.json`. It retains
+only the approved six features, renames the total fuel target to
+`fuel_consumption_kg_s`, removes invalid targets and times, and preserves missing
+features for training-only preprocessing. The audit records removals and feature
+quality by vessel. An existing ETL stage is never overwritten. MongoDB loading
+and FuelCast model training are separate later phases.
 
 ### Run the existing ETL pipeline
 

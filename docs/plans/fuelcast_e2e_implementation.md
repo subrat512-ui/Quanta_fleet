@@ -11,7 +11,7 @@
 | --- | --- | --- | --- |
 | 0 | Foundation | passed | none |
 | 1 | FuelCast ingestion | passed | 0 |
-| 2 | ETL | pending | 1 |
+| 2 | ETL | passed | 1 |
 | 3 | MongoDB | pending | 2 |
 | 4 | Split and preprocessing | pending | 2 |
 | 5 | Classical tuning | pending | 4 |
@@ -162,6 +162,49 @@ git diff --check
 Run a separately authorized integration command for live FuelCast download and
 MongoDB loading.
 
+## Approved Phase 2 plan — FuelCast ETL
+
+Authorization: the user supplied and approved the Phase 2 implementation plan.
+Phase 1 commit `5336068` is pushed. Use local run
+`fuelcast-phase1-20260928-002` at Hub SHA
+`eb6a6ec011c1c9a2cbce21459e22be4c77ef84dd` for the live ETL check.
+
+### Files and interfaces
+
+- Extend `src/greenfleet/constants/fuelcast.py` with the exact seven-field
+  source-to-canonical map, ordered 11-column output and units.
+- Add `src/greenfleet/artifacts/fuelcast_etl_artifact.py` and
+  `src/greenfleet/pipeline/etl/fuelcast.py` with
+  `run_fuelcast_etl(run_dir: Path) -> FuelCastETLArtifact` and `--run-id`.
+  Preserve the legacy ETL API and command.
+- Verify the Phase 1 manifest and raw snapshot: dataset identity, revision,
+  expected configurations, per-vessel counts, ordered columns, source schema
+  fingerprints and snapshot SHA-256. Process each vessel separately.
+- Remove exact duplicates, then invalid targets and times. Preserve feature
+  nulls; audit numeric coercions and physical range violations, replacing
+  invalid feature values with null. Reject conflicting vessel/time keys.
+- Hash length-prefixed revision, vessel and integer time to form `record_id`;
+  set `dataset_version` to revision. Stable-sort, write the canonical CSV and
+  reconciled audit into a temporary stage, then publish without overwrite.
+- Add `tests/test_fuelcast_etl.py` with three-vessel synthetic manifests and
+  fixtures. Update README with the new FuelCast ETL command and contract.
+
+No database or model migration occurs. The existing MongoDB contains synthetic
+data and remains untouched in this phase.
+
+### Validation and gate
+
+Run focused and complete offline unittests, both ETL CLI help commands,
+`git diff --check`, and independent read-only test/code reviews. Run the new
+CLI against the selected local source snapshot and verify counts, hashes,
+schema, uniqueness, sorting and ignored output. Inspect staged scope and diff,
+commit as `feat(etl): add canonical FuelCast transformation`, push the feature
+branch after a passing gate, and record the SHA in this plan and handoff.
+
+Rollback is a scoped commit revert; local ignored `02_etl` symlink and its
+`.02_etl-data-*` backing directory can be removed if needed. Source files
+remain immutable.
+
 ## Approved Phase 1 plan — FuelCast ingestion
 
 Authorization: the user supplied and approved this Phase 1 plan. Phase 0 commit
@@ -235,4 +278,20 @@ commit and local removal of the ignored run directory if needed.
   `cps_poseidon`, 25,351 `cps_triton`, 43,213 `oss_ceto` (173,986 total).
   Manifest counts matched CSV rows, snapshot SHA-256 matched, and both outputs
   were ignored by Git. The generated run remains local under `/artifacts/`.
-- Scoped commit and push: pending final staged-diff gate.
+- Scoped staged-diff gate passed. Phase 1 commit: `5336068`
+  (`feat(data): add FuelCast source ingestion`), pushed to
+  `origin/feat/fuelcast-e2e-pipeline` on 2026-09-28. This SHA note was written
+  after the push and remains local for the next scoped documentation commit.
+
+## Phase 2 gate results
+
+- Focused ETL tests: 10/10 passed; full offline suite: 26/26 passed with
+  `.greenfleet/bin/python`. Both ETL CLI help commands and diff check passed.
+- Independent test agent: PASS. Independent reviewer: PASS after source-byte
+  consistency, atomic no-overwrite publication, and nonempty-vessel fixes.
+- Live source run `fuelcast-phase1-20260928-002` produced 173,974 canonical
+  rows: Poseidon 105,422; Triton 25,347; Ceto 43,205. Twelve missing time
+  indexes were removed, with no target or duplicate removals. A fresh run from
+  copied Phase 1 inputs produced a byte-identical canonical CSV. Output hash,
+  schema, uniqueness, ordering, count reconciliation and Git ignore were checked.
+- Scoped staged-diff gate, feature commit and push: pending final gate.
