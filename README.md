@@ -48,6 +48,7 @@ Fitness / feasibility result
 The repository currently contains a data-foundation layer, partial ML training code, and a separate UI prototype:
 
 - CSV and Parquet dataset extraction.
+- Pinned Hugging Face FuelCast source ingestion with a raw snapshot and provenance manifest.
 - Dataset validation, cleaning, transformation, and audit reporting.
 - Command-line ETL workflow.
 - Idempotent batched MongoDB loading of processed vessel telemetry.
@@ -64,6 +65,7 @@ Quanta_fleet/
 ├── src/greenfleet/         # Importable Python package (src layout)
 │   ├── artifacts/         # Python stage-result classes; not generated datasets
 │   ├── config/            # Configuration objects for each ML stage
+│   ├── data_sources/      # Pinned FuelCast download and source validation
 │   ├── constants/         # Dataset paths, feature names, target, defaults
 │   ├── database/          # Batched MongoDB upserts and CLI
 │   ├── entity/            # VesselRecord telemetry dataclass
@@ -127,7 +129,19 @@ pip install -r requirements.txt
 pip install -e .
 ```
 
-### Run the ETL pipeline
+### Download FuelCast source data
+
+FuelCast comes from KROHNE Digital's [`krohnedigital/FuelCast`](https://huggingface.co/datasets/krohnedigital/FuelCast) dataset on Hugging Face. The source stage resolves a Hub commit SHA and loads the `train` split of `cps_poseidon`, `cps_triton`, and `oss_ceto` at that exact revision. It validates each declared source schema and writes `artifacts/<run-id>/01_source/fuelcast_raw.csv` plus `source_manifest.json`. The manifest records the SHA, retrieval time, source schema fingerprints, row counts, and snapshot hash. An existing run directory is never overwritten.
+
+```bash
+python -m greenfleet.data_sources --run-id fuelcast-20260928
+# To resolve a particular Hub tag, branch, or commit:
+python -m greenfleet.data_sources --run-id fuelcast-pinned --revision <revision>
+```
+
+FuelCast is licensed [CC BY-NC-ND 4.0](https://huggingface.co/datasets/krohnedigital/FuelCast/blob/main/README.md). Use it only in the authorized project context. Do not commit or redistribute downloaded rows. This stage keeps missing and invalid values for the later canonical ETL audit; it does not produce training data or model results.
+
+### Run the existing ETL pipeline
 
 The ETL command reads a source CSV, validates and normalizes it, writes the processed dataset, and produces an audit report.
 
