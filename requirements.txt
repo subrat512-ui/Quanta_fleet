@@ -28,4 +28,5 @@ tqdm
 
 
 scikit-learn
+xgboost
 joblib
