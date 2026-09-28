@@ -2,14 +2,27 @@
 
 ## Current state
 
-Phase 5 — bounded classical tuning — is **COMPLETE** on
-`feat/fuelcast-classical-models`. Phases 0–4 are already in its `origin/main`
-base. Code, focused and full offline tests, real quick and normal runs, and
-independent reviews passed.
-Phase 6 QPSO-SVR remains deferred. Phase 7 VQR requires a fresh approved plan.
-Historical Phase 3/4 entries below describe earlier state.
+Phase 5 — bounded classical tuning — is **COMPLETE** and merged into
+`origin/main`. Phase 7 simulator VQR implementation and review gate passed on
+`feat/fuelcast-vqr` from `origin/main` at `7375e74`. Feature commit
+`acab7575a37754ed81ea36354377d68b1a82bb10` was pushed to
+`origin/feat/fuelcast-vqr` on 2026-09-29; the branch tracks that remote. The
+approved plan and measured results are in
+`docs/plans/fuelcast_e2e_implementation.md`.
+Phase 6 QPSO-SVR remains deferred. The test partition and final champion remain
+untouched. Phase 8 requires a fresh plan before implementation. Historical text
+below describes earlier phase entry conditions.
 
-The validation worktree is `/private/tmp/fuelcast-e2e-clean`. The original
+The authoritative run `fuelcast-phase1-20260928-002` produced a normal VQR
+validation artifact with 600 sampled training rows, 80 COBYLA evaluations,
+26,096 validation predictions and MAE `0.2830684142645837` kg/s. Quick mode
+used 60 rows, 14 evaluations and all validation rows; its MAE was
+`0.415270197450664` kg/s and is smoke evidence. Normal fresh-process verify,
+11 guarded focused tests, the 70-pass/7-skip offline suite, independent code
+and test reviews, and `git diff --check` passed. All runtime outputs are ignored.
+
+The Phase 7 worktree is `/private/tmp/fuelcast-vqr`. The prior validation
+worktree is `/private/tmp/fuelcast-e2e-clean`. The original
 worktree at `/Users/subrat/Desktop/SIH` has unrelated local changes; preserve
 them.
 

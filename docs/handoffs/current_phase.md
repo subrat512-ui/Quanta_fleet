@@ -2,13 +2,52 @@
 
 ## Status
 
-- Current phase: Phase 7 — VQR planning
-- State: Phase 5 classical tuning is complete on
-  `feat/fuelcast-classical-models`; its review and validation gates passed.
-  Phase 6 QPSO-SVR remains deferred; VQR requires a fresh approved plan before
-  implementation.
-- Last completed phase: Phase 5 — bounded classical regression tuning
-- Current branch: `feat/fuelcast-classical-models`
+- Current phase: Phase 7 complete and pushed; Phase 8 requires a fresh plan
+- State: Phase 5 classical tuning is complete. Phase 6 QPSO-SVR remains
+  deferred. Phase 7 implementation, real quick/normal validation and independent
+  reviews passed on `feat/fuelcast-vqr`. Commit
+  `acab7575a37754ed81ea36354377d68b1a82bb10` was pushed to
+  `origin/feat/fuelcast-vqr` on 2026-09-29.
+  No production champion or test evaluation exists.
+- Last completed phase gate: Phase 7 — simulator-based VQR
+- Current branch: `feat/fuelcast-vqr`, tracking `origin/feat/fuelcast-vqr`
+
+Phase 7 uses the authoritative run `fuelcast-phase1-20260928-002` (revision
+`eb6a6ec011c1c9a2cbce21459e22be4c77ef84dd`, canonical SHA-256
+`262428b4b2002435806f60aa9939755798dc9fe208b0c4b5d963a9200639cc65`).
+Its saved VQR arrays contain six angles in the approved raw-feature order:
+training `(121780, 6)`, validation `(26096, 6)`. The Phase 4 angle and target
+scalers are already fitted on training data. The VQR loader reads only saved
+train and validation arrays. Exact simulator inference uses a six-qubit circuit,
+and both quick and normal modes retain all 26,096 validation identities.
+Quick mode is smoke evidence; normal mode is the official VQR validation result.
+
+Qiskit 2.5.2 and Qiskit Machine Learning 0.9.1 are optional Phase 7 dependencies.
+A tiny local API check found that SciPy COBYLA raises a requested 5-evaluation
+budget to 14 for 12 weights. The quick budget is therefore 14; normal is 80.
+Both real runs published ignored outputs under `06_quantum/vqr/<mode>/candidate`
+for the authoritative run. Quick used 60 time-spaced training rows and 14
+COBYLA evaluations; validation MAE was `0.415270197450664` kg/s across all
+26,096 rows (fit 0.674 s, prediction 20.136 s). Normal used 600 rows and 80
+evaluations; validation MAE was `0.2830684142645837` kg/s, RMSE
+`0.3683189258325035` kg/s, R² `0.5553620947467861` (fit 37.327 s,
+prediction 20.141 s). Normal per-vessel results:
+
+| Vessel | Validation rows | MAE (kg/s) | RMSE (kg/s) | R² |
+| --- | ---: | ---: | ---: | ---: |
+| `cps_poseidon` | 15,813 | 0.282858 | 0.393336 | 0.483275 |
+| `cps_triton` | 3,802 | 0.426180 | 0.447769 | -46.900958 |
+| `oss_ceto` | 6,481 | 0.199628 | 0.226123 | -2.057488 |
+
+The normal candidate passed explicit fresh-process reconstruction and
+prediction verification. Guarded focused tests passed 11/11; ordinary focused
+tests had five passes and six guarded skips; the full offline suite had 70
+passes and seven opt-in skips using `DYLD_LIBRARY_PATH`. Independent code and
+test reviews passed with no blocker or major findings, and `git diff --check`
+passed. Phase 7 is complete and pushed. QPSO-SVR
+remains deferred. The generated artifacts are ignored; the test partition was
+not evaluated or used for predictions, and no production champion was chosen.
+Phase 8 requires a fresh plan before implementation.
 
 Phase 5 reads only saved Phase 4 training and validation partitions from an
 explicit run directory. Quick and normal searches have separate output

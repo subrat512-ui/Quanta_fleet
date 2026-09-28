@@ -1,6 +1,6 @@
 # FuelCast End-to-End Implementation Plan
 
-Current feature branch: `feat/fuelcast-classical-models`. Earlier references
+Current feature branch: `feat/fuelcast-vqr`. Earlier references
 to `feat/fuelcast-e2e-clean` and `feat/fuelcast-e2e-pipeline` describe prior
 phase worktrees. See `docs/SESSION_HANDOFF.md` for the latest operational
 state and handoff.
@@ -22,7 +22,7 @@ state and handoff.
 | 4 | Split and preprocessing | passed | 2, 3 |
 | 5 | Classical tuning | passed | 4 |
 | 6 | QPSO-SVR | deferred | 4 |
-| 7 | VQR | pending | 4 |
+| 7 | VQR | passed and pushed | 4 |
 | 8 | Model selection | pending | 5, 7 |
 | 9 | Orchestration | pending | 3, 8 |
 
@@ -40,14 +40,16 @@ Every phase starts with a fresh spec-to-plan cycle:
 7. Independent test and reviewer agents perform the broad phase gate.
 8. Fix all blocker/major findings and repeat validation.
 9. On PASS, stage only phase-owned changes and create the scoped commit.
-10. Push `feat/fuelcast-e2e-clean` to GitHub.
+10. Push the reviewed phase branch; Phase 7 uses `feat/fuelcast-vqr`.
 11. Record commit SHA, commands, test/review result and push state here and in
     the handoff.
 12. Begin the next phase only after the push succeeds.
 
 ## Feature branch and commit plan
 
-Branch: `feat/fuelcast-e2e-clean`
+Phase 7 branch: `feat/fuelcast-vqr`, tracking `origin/feat/fuelcast-vqr`.
+Earlier phases used
+`feat/fuelcast-e2e-clean` and `feat/fuelcast-classical-models`.
 
 | Phase | Commit subject |
 | --- | --- |
@@ -82,6 +84,108 @@ blocker/major findings, secrets, datasets, artifacts or unrelated changes.
 - No new split created inside a trainer.
 - No test-set use during tuning or selection.
 - No unsupported quantum claims.
+
+## Approved Phase 7 plan — simulator-based VQR
+
+Authorization: Phase 7 implementation is approved on `feat/fuelcast-vqr`, based
+on `origin/main` at `7375e74`. QPSO-SVR remains deferred. The authoritative
+run is `fuelcast-phase1-20260928-002`, revision
+`eb6a6ec011c1c9a2cbce21459e22be4c77ef84dd`, canonical SHA-256
+`262428b4b2002435806f60aa9939755798dc9fe208b0c4b5d963a9200639cc65`.
+
+- Add a VQR-only train/validation loader. Verify run, schema, hashes and saved
+  identities without opening or hashing `test.npz`. Reuse the six Phase 4 VQR
+  angles and the training-fitted Phase 4 angle and target scalers unchanged.
+- Encode one approved input per qubit with `RY`: speed, wind speed, periodic wind
+  direction, wave height, wave period and current speed. Use a one-layer
+  `real_amplitudes` ansatz with linear CX entanglement (12 weights), observable
+  `(Z0+Z1+Z2+Z3+Z4+Z5)/6`, and exact simulator `QMLEstimator`.
+- Fit Qiskit Machine Learning `VQR` with scaled-target squared error,
+  deterministic seed 42 initial weights, and COBYLA. Quick mode uses 60
+  time-spaced training rows (36/9/15 per vessel) and 14 evaluations, the
+  SciPy COBYLA minimum for 12 weights. Normal
+  mode uses 600 rows (364/87/149) and 80 evaluations. Both modes predict all
+  26,096 saved validation rows in batches of 256; quick is smoke-only because
+  of its small training budget. Cooperative elapsed-time checks use 600 seconds
+  quick and 7,200 seconds normal for fitting, plus a separate 3,600-second
+  validation budget. Each check runs after an objective call or prediction
+  batch; it cannot interrupt a single stalled simulator call.
+- Save mode-specific, reconstruction-based candidate artifacts under
+  `06_quantum/vqr/<mode>/candidate`, including weights, circuit configuration,
+  Phase 4 scaler copies, schema, sample IDs, optimizer history, validation
+  predictions and metrics. Reconstruct an `EstimatorQNN` for fresh-process
+  inference. Publish a complete mode directory atomically after verification.
+- Keep Qiskit dependencies optional and lazy-imported. Declare Qiskit 2.5.2
+  and Qiskit Machine Learning 0.9.1 separately; no Aer or Algorithms package
+  is required for exact statevector simulation. A guarded synthetic-only smoke
+  matrix checks one/two ansatz repetitions and COBYLA/SPSA, while real quick
+  and normal execution remain fixed to one repetition and COBYLA. Require the
+  tiny simulator gate before any real run.
+- Validate deterministic sampling, six-qubit circuit width, training-only
+  scaling, metric units, no test-file access, model reconstruction and honest
+  labels using synthetic fixtures. Run focused tests, the offline suite and
+  `git diff --check`. Independent test and code reviewers must pass before a
+  scoped commit and push. The intended commit is
+  `feat(quantum): add simulator-based VQR`.
+
+Risk controls: quick mode measures runtime before normal execution; shallow
+circuits and 256-row prediction batches limit memory; callback history persists
+in unpublished staging output so interruption does not publish a partial
+candidate. `--resume-checkpoint ABSOLUTE_STAGING_CANDIDATE` starts a new COBYLA
+attempt from that checkpoint's best loss; the optimizer state is reset and both
+attempt IDs are recorded. Rollback leaves Phase 4 and Phase 5 artifacts intact
+and removes only inspected unpublished Phase 7 output. No production champion
+or test evaluation is part of this phase.
+
+Phase 7 entry point and validation commands (from `/private/tmp/fuelcast-vqr`):
+
+```bash
+PYTHONPATH=src /Users/subrat/Desktop/SIH/.greenfleet/bin/python -c 'import importlib.metadata as m; print({n: m.version(n) for n in ("qiskit", "qiskit-machine-learning", "numpy", "scipy", "scikit-learn")})'
+PYTHONPATH=src /Users/subrat/Desktop/SIH/.greenfleet/bin/python -m unittest discover -s tests -p 'test_fuelcast_vqr.py' -v
+GREENFLEET_RUN_QUANTUM_SMOKE=1 PYTHONPATH=src /Users/subrat/Desktop/SIH/.greenfleet/bin/python -m unittest discover -s tests -p 'test_fuelcast_vqr.py' -v
+GREENFLEET_RUN_QUANTUM_SMOKE=1 PYTHONPATH=src /Users/subrat/Desktop/SIH/.greenfleet/bin/python -m unittest discover -s tests -p 'test_fuelcast_vqr.py' -k test_synthetic_quick_cli -v
+GREENFLEET_RUN_QUANTUM_SMOKE=1 PYTHONPATH=src /Users/subrat/Desktop/SIH/.greenfleet/bin/python -m unittest discover -s tests -p 'test_fuelcast_vqr.py' -k test_fresh_process_reconstruction -v
+GREENFLEET_RUN_QUANTUM_SMOKE=1 PYTHONPATH=src /Users/subrat/Desktop/SIH/.greenfleet/bin/python -m unittest discover -s tests -p 'test_fuelcast_vqr.py' -k test_full_trainer_guard_and_checkpoint_restart -v
+DYLD_LIBRARY_PATH=/Users/subrat/Desktop/SIH/.greenfleet/lib/python3.11/site-packages/sklearn/.dylibs PYTHONPATH=src /Users/subrat/Desktop/SIH/.greenfleet/bin/python -m unittest discover -s tests -v
+git diff --check
+```
+
+Opt-in real commands, only after synthetic gates and runtime assessment:
+
+```bash
+OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 PYTHONPATH=src /Users/subrat/Desktop/SIH/.greenfleet/bin/python -m greenfleet.ml_pipeline.quantum.fuelcast_vqr train --run-dir /Users/subrat/Desktop/SIH/artifacts/fuelcast-phase1-20260928-002 --mode quick --expected-version eb6a6ec011c1c9a2cbce21459e22be4c77ef84dd --expected-canonical-sha256 262428b4b2002435806f60aa9939755798dc9fe208b0c4b5d963a9200639cc65
+OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 PYTHONPATH=src /Users/subrat/Desktop/SIH/.greenfleet/bin/python -m greenfleet.ml_pipeline.quantum.fuelcast_vqr train --run-dir /Users/subrat/Desktop/SIH/artifacts/fuelcast-phase1-20260928-002 --mode normal --expected-version eb6a6ec011c1c9a2cbce21459e22be4c77ef84dd --expected-canonical-sha256 262428b4b2002435806f60aa9939755798dc9fe208b0c4b5d963a9200639cc65
+PYTHONPATH=src /Users/subrat/Desktop/SIH/.greenfleet/bin/python -m greenfleet.ml_pipeline.quantum.fuelcast_vqr verify --run-dir /Users/subrat/Desktop/SIH/artifacts/fuelcast-phase1-20260928-002 --candidate-dir /Users/subrat/Desktop/SIH/artifacts/fuelcast-phase1-20260928-002/06_quantum/vqr/normal/candidate
+```
+
+### Phase 7 implementation gate — 2026-09-29
+
+The quick and normal runs completed against authoritative run
+`fuelcast-phase1-20260928-002`. Each scored all 26,096 saved validation rows.
+The quick 60-row/14-evaluation smoke run had validation MAE
+`0.415270197450664` kg/s, fit time 0.674 s and prediction time 20.136 s.
+The normal 600-row/80-evaluation prototype had validation MAE
+`0.2830684142645837` kg/s, RMSE `0.3683189258325035` kg/s and R²
+`0.5553620947467861`; fit time 37.327 s and prediction time 20.141 s.
+Normal per-vessel metrics from the generated candidate manifest:
+
+| Vessel | Rows | MAE (kg/s) | RMSE (kg/s) | R² |
+| --- | ---: | ---: | ---: | ---: |
+| `cps_poseidon` | 15,813 | 0.282858 | 0.393336 | 0.483275 |
+| `cps_triton` | 3,802 | 0.426180 | 0.447769 | -46.900958 |
+| `oss_ceto` | 6,481 | 0.199628 | 0.226123 | -2.057488 |
+
+The normal artifact at `06_quantum/vqr/normal/candidate` passed explicit
+fresh-process reconstruction and prediction verification. Guarded VQR tests:
+11/11 passed; ordinary focused tests: five passed and six quantum tests
+skipped; full offline suite: 70 passed, seven opt-in skips with
+`DYLD_LIBRARY_PATH`; `git diff --check` and independent code/test reviews:
+PASS with no blocker or major findings. Generated outputs remain ignored. The
+Phase 7 feature commit `acab7575a37754ed81ea36354377d68b1a82bb10`
+(`feat(quantum): add simulator-based VQR`) was pushed to
+`origin/feat/fuelcast-vqr` on 2026-09-29. Phase 7 is complete. QPSO-SVR stays
+deferred. No test evaluation or production champion selection occurred. Phase 8
+requires a fresh specification-to-plan cycle before implementation.
 
 ## Approved Phase 4 plan — chronological split and preprocessing
 
