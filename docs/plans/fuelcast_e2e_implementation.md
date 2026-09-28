@@ -1,5 +1,10 @@
 # FuelCast End-to-End Implementation Plan
 
+Current feature branch: `feat/fuelcast-e2e-clean`. Earlier references to
+`feat/fuelcast-e2e-pipeline` describe the preserved original branch; new phases
+use the clean branch. See `docs/SESSION_HANDOFF.md` for the latest operational
+state and Phase 4 entry conditions.
+
 ## Status legend
 
 - `pending`: not started
@@ -202,9 +207,27 @@ Final gate: focused tests 22 total (21 passed, one guarded integration skip);
 full offline suite 48 total (47 passed, one guarded integration skip); both
 database help commands and `git diff --check` passed; independent final code
 review passed with no blocker or major findings. The opt-in live integration
-test remains unrun by design. MongoDB `--apply` was not run. Phase 3 commit
-`1f9705d2dab8006a2c764edde84adbc465949d5e` was pushed to
+test remains unrun by design. At that implementation gate, MongoDB `--apply`
+had not yet run; the subsequent production load is recorded below. The Phase 3
+commit `1f9705d2dab8006a2c764edde84adbc465949d5e` was pushed to
 `origin/feat/fuelcast-e2e-clean`. Phase 3 is complete; Phase 4 is next.
+
+### Phase 3 production load verification
+
+The authorized `--apply` command used the approved canonical file at
+`artifacts/fuelcast-phase1-20260928-002/02_etl/fuelcast_clean.csv` and wrote
+to `greenfleet.fuelcast_telemetry`. The generated report is
+`artifacts/fuelcast-phase1-20260928-002/03_mongodb/mongodb_load_report.json`.
+It records 173,974 attempted, 173,974 inserted, 0 matched/skipped, 0 modified,
+and 174 completed batches. Final collection and active-version counts are
+173,974. Every expected ID and all required indexes were verified; canonical
+conflicts, duplicate `record_id` values, duplicate active-version vessel/time
+keys, and extra active-version IDs were all zero. A separate read-only
+preflight recognized all 173,974 canonical rows, found zero conflicts and
+zero indexes to create, and predicts zero inserts on another idempotent run.
+No second write was performed. Legacy MongoDB collections/data must remain
+untouched. Phase 4 must consume this canonical CSV, not the legacy merged
+synthetic dataset or a mutable MongoDB query; Phase 4 has not started.
 
 ## Approved Phase 0 plan — repository foundation
 

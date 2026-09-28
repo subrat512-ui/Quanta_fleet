@@ -58,6 +58,9 @@ Final gate: focused tests 22 total (21 passed, one guarded integration skip);
 full offline suite 48 total (47 passed, one guarded integration skip); both
 database help commands, `git diff --check`, and independent final code review
 passed with no blocker or major findings. The guarded integration test remains
-unrun by design. MongoDB `--apply` was not run. Phase 3 commit
+unrun by design. At that implementation gate, MongoDB `--apply` had not yet
+run. The subsequent production load completed: 173,974 attempted and inserted,
+zero matched or modified; built-in verification and read-only follow-up
+preflight both passed for `greenfleet.fuelcast_telemetry`. Phase 3 commit
 `1f9705d2dab8006a2c764edde84adbc465949d5e` was pushed to
 `origin/feat/fuelcast-e2e-clean`; Phase 3 is complete and Phase 4 is next.
