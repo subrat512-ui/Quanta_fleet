@@ -54,7 +54,7 @@ version `eb6a6ec011c1c9a2cbce21459e22be4c77ef84dd`, and vessel counts
 active rows, conflicts, and unsafe keys. All three deterministic indexes
 remain to create; `safe_to_apply` was true. No database state changed.
 
-Final gate: focused tests 21 total (20 passed, one guarded integration skip);
+Final gate: focused tests 22 total (21 passed, one guarded integration skip);
 full offline suite 48 total (47 passed, one guarded integration skip); both
 database help commands, `git diff --check`, and independent final code review
 passed with no blocker or major findings. The guarded integration test remains

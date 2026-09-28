@@ -198,7 +198,7 @@ unsafe keys. The three required indexes to create are
 `fuelcast_vessel_time`. Preflight returned `safe_to_apply: true` and made no
 database changes.
 
-Final gate: focused tests 21 total (20 passed, one guarded integration skip);
+Final gate: focused tests 22 total (21 passed, one guarded integration skip);
 full offline suite 48 total (47 passed, one guarded integration skip); both
 database help commands and `git diff --check` passed; independent final code
 review passed with no blocker or major findings. The opt-in live integration

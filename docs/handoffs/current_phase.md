@@ -154,7 +154,7 @@ documentation commit.
   active-version rows, conflicts, and unsafe keys. All three indexes remain
   to create: `fuelcast_record_id_unique`, `fuelcast_dataset_version`, and
   `fuelcast_vessel_time`. `safe_to_apply` was true; no database state changed.
-- Final gate: focused tests 21 total (20 passed, one guarded integration skip);
+- Final gate: focused tests 22 total (21 passed, one guarded integration skip);
   full offline suite 48 total (47 passed, one guarded integration skip); both
   database help commands, `git diff --check`, and independent final code review
   passed with no blocker or major findings. The opt-in live integration test
