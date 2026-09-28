@@ -1,9 +1,9 @@
 # FuelCast End-to-End Implementation Plan
 
-Current feature branch: `feat/fuelcast-e2e-clean`. Earlier references to
-`feat/fuelcast-e2e-pipeline` describe the preserved original branch; new phases
-use the clean branch. See `docs/SESSION_HANDOFF.md` for the latest operational
-state and Phase 4 entry conditions.
+Current feature branch: `feat/fuelcast-classical-models`. Earlier references
+to `feat/fuelcast-e2e-clean` and `feat/fuelcast-e2e-pipeline` describe prior
+phase worktrees. See `docs/SESSION_HANDOFF.md` for the latest operational
+state and handoff.
 
 ## Status legend
 
@@ -20,7 +20,7 @@ state and Phase 4 entry conditions.
 | 2 | ETL | passed | 1 |
 | 3 | MongoDB | passed | 2 |
 | 4 | Split and preprocessing | passed | 2, 3 |
-| 5 | Classical tuning | pending | 4 |
+| 5 | Classical tuning | passed | 4 |
 | 6 | QPSO-SVR | deferred | 4 |
 | 7 | VQR | pending | 4 |
 | 8 | Model selection | pending | 5, 7 |
@@ -453,6 +453,96 @@ Hub outages or schema changes fail clearly without publishing a snapshot. The
 reported 173,986 rows is context, not an assertion. Do not commit source rows,
 credentials, caches or runtime artifacts. Rollback is a revert of the Phase 1
 commit and local removal of the ignored run directory if needed.
+
+## Approved Phase 5 plan — bounded classical tuning
+
+Authorization: the user supplied and requested implementation of the detailed
+Phase 5 plan. Implementation, validation, commit and push belong to
+`feat/fuelcast-classical-models`, based on `origin/main` at `60620a1`, which
+already contains Phases 0–4. The authoritative local run is
+`fuelcast-phase1-20260928-002`, pinned
+to version `eb6a6ec011c1c9a2cbce21459e22be4c77ef84dd` and canonical SHA-256
+`262428b4b2002435806f60aa9939755798dc9fe208b0c4b5d963a9200639cc65`.
+Its Phase 4 train/validation arrays have 121,780 and 26,096 rows. Phase 5 must
+neither open nor hash `test.npz`, fit preprocessing, or alter Phase 4 artifacts.
+
+### Files and interfaces
+
+Add `training/fuelcast_data.py` for explicit run resolution, source/hash/schema
+and saved identity checks, loading only training and validation arrays. Add
+`training/fuelcast_classical.py` for a `train` and `verify` CLI, bounded search,
+validation metrics, per-vessel results and atomic mode publication. Add
+`training/fuelcast_classical_model.py` for strict named-feature candidate reload.
+Add corresponding typed settings, constants and artifact paths in the existing
+`config`, `constants` and `artifacts` packages. Pin XGBoost and record dependency
+versions. Add synthetic focused tests and update the README and phase handoffs.
+No Phase 4 migration is required; the saved seven-column transformed arrays are
+the input interface.
+
+### Search and output
+
+Use seed 42, a fixed Ridge grid and seeded parameter sampling for RF, GB and
+XGBoost. Quick mode uses at most 1,000 evenly spaced training rows per vessel;
+normal mode uses all training rows. Both modes score every trial on the complete
+saved validation partition with MAE. Quick budgets are Ridge 3, RF 2, GB 2,
+XGBoost 2; normal budgets are 5, 6, 6 and 8. RF and XGBoost use two fit threads;
+XGBoost uses CPU histogram trees. Persist every trial, best parameters, model,
+named schema and hashes, sampled IDs, validation predictions, overall and
+per-vessel MAE/RMSE/R² and dependency versions. Publish a complete mode
+directory after all four fresh-process reload checks pass. The leaderboard is
+sorted by validation MAE and candidate name and declares only classical scope.
+
+The exact search spaces are fixed in `constants/fuelcast_classical.py`:
+
+| Candidate | Quick | Normal |
+| --- | --- | --- |
+| Ridge | `alpha=[0.1,1,10]` | `alpha=[0.01,0.1,1,10,100]` |
+| Random Forest | `n_estimators=[40,60]`, `max_depth=[8,12]`, `min_samples_split=[2,5]`, `min_samples_leaf=[2,4]`, `max_features=[0.7,1]` | `n_estimators=[60,100,120]`, `max_depth=[8,12]`, `min_samples_split=[2,5,10]`, `min_samples_leaf=[2,4]`, `max_features=[0.7,1]` |
+| Gradient Boosting | `n_estimators=[40,60]`, `learning_rate=[0.05,0.1]`, `max_depth=[2,3]`, `min_samples_split=[2,5]`, `subsample=[0.7,1]` | `n_estimators=[60,90,120]`, `learning_rate=[0.03,0.07,0.1]`, `max_depth=[2,3]`, `min_samples_split=[2,5,10]`, `subsample=[0.7,1]` |
+| XGBoost | `n_estimators=[60,100]`, `learning_rate=[0.05,0.1]`, `max_depth=[3,5]`, `min_child_weight=[1,5]`, `subsample=[0.7,1]`, `colsample_bytree=[0.7,1]`, `reg_alpha=[0,0.1]`, `reg_lambda=[1,5]` | `n_estimators=[80,140,200]`, `learning_rate=[0.03,0.07,0.1]`, `max_depth=[3,5]`, `min_child_weight=[1,5,10]`, `subsample=[0.7,1]`, `colsample_bytree=[0.7,1]`, `reg_alpha=[0,0.1]`, `reg_lambda=[1,5]` |
+
+### Gate, risks and rollback
+
+Run focused synthetic tests, the full offline suite, quick and normal real
+training where dependencies/resources permit, fresh-process verification, CLI
+help and `git diff --check`. Independent read-only test and code reviewers gate
+the scoped commit and push. The normal ensemble fits may take tens of minutes
+and 1–3 GB; sequential trials, depth/tree caps and two worker threads bound
+resource use. Missing XGBoost or macOS OpenMP must fail clearly before
+publication. Retrying creates a fresh temporary stage; remove only unpublished
+Phase 5 staging output after inspection. Preserve the published Phase 4 stage,
+all canonical data and unrelated branches and changes.
+
+Validation commands use the clean worktree's `PYTHONPATH=src` and the project's
+`.greenfleet/bin/python`: `python -m unittest discover -s tests -p
+'test_fuelcast_classical.py' -v`, `python -m unittest discover -s tests -v`,
+`python -m greenfleet.ml_pipeline.training.fuelcast_classical --help`, and
+`git diff --check`. Real runs pass the absolute pinned run, expected version and
+canonical hash to `train --mode quick` followed by `train --mode normal`.
+`verify` is run on every candidate in a fresh process before publication.
+
+### Phase 5 validation note
+
+During the first real normal run, a transient three-byte whitespace edit to
+Phase 4 `feature_schema.json` changed its SHA-256, so fresh-process verification
+rejected the candidate and removed the unpublished staging directory. The
+altered bytes were backed up at
+`/private/tmp/fuelcast-feature-schema-20260928-230906.modified.json`; the
+original manifest-matching bytes were restored before reruns. No source rows,
+preprocessor, partition arrays or split manifest were changed.
+
+The restored pinned run produced complete, ignored `05_classical/quick` and
+`05_classical/normal` directories. Fresh-process verification passed for each
+candidate before either directory was published. Quick validation MAE ranked
+Random Forest 0.122604, Gradient Boosting 0.143913, XGBoost 0.146567 and
+Ridge 0.295065. Normal validation MAE ranked XGBoost 0.120164, Random Forest
+0.120935, Gradient Boosting 0.131695 and Ridge 0.248201. These are classical
+validation results only; no test score or production champion was produced.
+Focused synthetic tests passed 9/9; the full offline suite passed 66 tests with
+one opt-in integration skip. CLI help, explicit normal Ridge fresh-process
+verification and `git diff --check` passed. Independent read-only test and code
+reviews passed after count, metadata and guard fixes. Commit and push details
+are reported with the phase completion record.
 
 ## Phase 0 gate results
 

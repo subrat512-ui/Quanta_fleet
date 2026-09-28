@@ -20,10 +20,13 @@ reason, migration impact and affected tests before implementation.
 | D013 | VQR is the genuine quantum candidate and starts on a simulator. | Technically honest, reproducible prototype. |
 | D014 | One authoritative orchestrator replaces competing paths. | Prevents incompatible pipeline contracts. |
 | D015 | One writer per phase; parallel agents are read-only. | Avoids shared-worktree conflicts. |
+| D016 | Phase 5 uses saved Phase 4 training/validation arrays and explicit single validation scoring. | Prevents a new random split, preprocessing refit, and test-based tuning. |
+| D017 | Quick mode samples training rows deterministically by vessel; validation remains complete. | Bounds smoke-run cost without changing shared row identities. |
+| D018 | XGBoost is pinned to 3.2.0 for the Python 3.11 project environment. | The originally planned 3.4.1 requires Python 3.12; macOS also needs the OpenMP runtime. |
 
 ## Open decisions
 
 - Exact dataset revision pin/fingerprint representation.
-- Final XGBoost/Qiskit compatible version pins.
+- Final Qiskit compatible version pins.
 - Whether champion refit uses train+validation for every model family.
 - VQR feature-map, ansatz and optimizer selected after a small benchmark.

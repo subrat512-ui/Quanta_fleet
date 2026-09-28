@@ -2,19 +2,32 @@
 
 ## Current state
 
-Phase 4 — chronological split and preprocessing — is **COMPLETE**. Phase 3
-MongoDB loading and its production verification were completed earlier.
-The Phase 4 plan was approved and recorded in
-`docs/plans/fuelcast_e2e_implementation.md`. Its implementation, tests,
-independent review, scoped commit `1c8e93365c16823e2756c3b649d5af4ead236d30`
-and push passed. Phase 5 classical tuning requires a fresh plan.
-The historical Phase 3 entry notes below describe the state before Phase 4.
+Phase 5 — bounded classical tuning — is **COMPLETE** on
+`feat/fuelcast-classical-models`. Phases 0–4 are already in its `origin/main`
+base. Code, focused and full offline tests, real quick and normal runs, and
+independent reviews passed.
+Phase 6 QPSO-SVR remains deferred. Phase 7 VQR requires a fresh approved plan.
+Historical Phase 3/4 entries below describe earlier state.
 
-Use branch `feat/fuelcast-e2e-clean` at its remote head. The clean worktree in
-this session is `/private/tmp/fuelcast-e2e-clean`; the original worktree at
-`/Users/subrat/Desktop/SIH` has unrelated local changes. Preserve those
-changes. If the temporary worktree is unavailable in a new session, recreate a
-clean checkout of the branch without altering the original worktree.
+The validation worktree is `/private/tmp/fuelcast-e2e-clean`. The original
+worktree at `/Users/subrat/Desktop/SIH` has unrelated local changes; preserve
+them.
+
+Phase 5 must use only `train.npz` and `validation.npz` from the pinned run. Do
+not open or hash `test.npz`, refit Phase 4 preprocessing, use identity metadata
+as model features, or rank on anything except validation MAE. The CLI takes
+absolute run/version/canonical-checksum arguments. `05_classical/quick` and
+`05_classical/normal` hold independent four-candidate experiments.
+The Phase 4 schema briefly acquired a three-byte whitespace edit during a
+real-run review, which its manifest hash correctly rejected. The altered copy
+was saved under `/private/tmp` and original bytes restored; no arrays changed.
+Both real `05_classical` modes subsequently completed: quick ranked Random
+Forest first (validation MAE 0.122604); normal ranked XGBoost first (0.120164).
+All four models in each mode passed fresh-process reload. These are ignored
+validation-only outputs, not a frozen cross-family champion or test evaluation.
+Phase 5 focused tests passed 9/9; the full offline suite passed 66 tests with
+one opt-in integration skip. The classical leaderboard is validation-only and
+does not select a production champion. No test score was produced.
 
 ## Authoritative FuelCast data and MongoDB state
 

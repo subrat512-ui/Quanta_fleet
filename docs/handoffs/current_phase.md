@@ -2,11 +2,37 @@
 
 ## Status
 
-- Current phase: Phase 5 — classical model tuning (planning pending)
-- State: Phase 4 implementation, independent review, feature commit and push
-  passed; Phase 5 requires a fresh approved plan
-- Last completed phase: Phase 4 — chronological split and preprocessing
-- Current branch: `feat/fuelcast-e2e-clean`
+- Current phase: Phase 7 — VQR planning
+- State: Phase 5 classical tuning is complete on
+  `feat/fuelcast-classical-models`; its review and validation gates passed.
+  Phase 6 QPSO-SVR remains deferred; VQR requires a fresh approved plan before
+  implementation.
+- Last completed phase: Phase 5 — bounded classical regression tuning
+- Current branch: `feat/fuelcast-classical-models`
+
+Phase 5 reads only saved Phase 4 training and validation partitions from an
+explicit run directory. Quick and normal searches have separate output
+directories under `05_classical`. Neither is a production champion; later
+selection across approved families remains validation-MAE based. QPSO-SVR is
+deferred from the current MVP roadmap, with its specification retained.
+
+One transient three-byte whitespace edit to the Phase 4 feature schema caused
+the loader's hash check to reject an in-progress real normal run. The altered
+bytes were backed up under `/private/tmp` and the original schema bytes were
+restored to their manifest hash before reruns. No data arrays changed.
+
+Both real Phase 5 modes completed and published four candidates each. Quick
+validation MAE ranking: Random Forest 0.122604, Gradient Boosting 0.143913,
+XGBoost 0.146567, Ridge 0.295065. Normal validation MAE ranking: XGBoost
+0.120164, Random Forest 0.120935, Gradient Boosting 0.131695, Ridge 0.248201.
+Each model passed fresh-process reload before its mode was published. These
+generated results are ignored, validation-only artifacts; there is no final
+champion or test score at this phase.
+Focused synthetic tests: 9/9 passed. Full offline suite: 66 tests, one opt-in
+integration skip. CLI help, explicit normal Ridge reload, `git diff --check`
+and independent read-only reviews passed. The classical leaderboard is
+validation-only and does not select the final production champion. No test
+evaluation was run.
 
 The phase records below describe the original branch. The clean recovery
 branch excludes its tracked environment and runtime-output deletions and the
