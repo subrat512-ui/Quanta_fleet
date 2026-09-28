@@ -221,8 +221,56 @@ writes four loadable candidates and a validation-only leaderboard to
 `05_classical/<mode>/`; it does not choose a production champion or read the
 test partition. `verify --run-dir ABSOLUTE_RUN --candidate-dir ABSOLUTE_CANDIDATE`
 checks a fresh-load prediction. XGBoost requires its pinned Python package and
-the OpenMP runtime (`libomp` on macOS). Simulator-based VQR training follows in
-a later phase; QPSO-SVR is deferred from the current MVP roadmap.
+the OpenMP runtime (`libomp` on macOS).
+
+### Train simulator-based FuelCast VQR
+
+Install the optional quantum packages and run the guarded synthetic smoke tests:
+
+```bash
+python -m pip install -r requirements-vqr.txt
+GREENFLEET_RUN_QUANTUM_SMOKE=1 python -m unittest discover -s tests -p 'test_fuelcast_vqr.py' -v
+```
+
+The Phase 7 command uses the saved six-angle Phase 4 inputs and fitted scalers.
+It fits a genuine six-qubit parameterized circuit with classical COBYLA on an
+exact statevector simulator. Its deterministic, time-spaced sample contains 60
+training rows in quick mode or 600 in normal mode. Both modes predict every
+saved validation row. Quick results are interface smoke evidence; the normal
+artifact is the VQR validation result. Neither selects a production champion
+or accesses the test partition.
+
+```bash
+python -m greenfleet.ml_pipeline.quantum.fuelcast_vqr train \
+  --run-dir /absolute/path/to/artifacts/fuelcast-phase1-20260928-002 \
+  --mode quick \
+  --expected-version eb6a6ec011c1c9a2cbce21459e22be4c77ef84dd \
+  --expected-canonical-sha256 262428b4b2002435806f60aa9939755798dc9fe208b0c4b5d963a9200639cc65
+```
+
+Use `--mode normal` for the bounded 600-row prototype. Results publish under
+`06_quantum/vqr/<mode>/candidate/`; quick and normal output never overwrite
+each other. Verify reconstruction without fitting:
+
+```bash
+python -m greenfleet.ml_pipeline.quantum.fuelcast_vqr verify \
+  --run-dir /absolute/path/to/artifacts/fuelcast-phase1-20260928-002 \
+  --candidate-dir /absolute/path/to/artifacts/fuelcast-phase1-20260928-002/06_quantum/vqr/normal/candidate
+```
+
+Interrupted attempts remain in a hidden `.normal-staging-*` or
+`.quick-staging-*` directory. A new `train` command may add
+`--resume-checkpoint /absolute/path/to/staging/candidate` to start a **new**
+COBYLA run from the saved lowest-loss weights; it does not restore COBYLA's
+internal state. The artifact records both attempt IDs. VQR runs on a
+simulator, uses hybrid quantum-classical training, and makes no quantum
+advantage claim. QPSO-SVR remains deferred.
+
+For the pinned FuelCast run, the normal 600-row simulator prototype scored all
+26,096 validation rows with MAE **0.283068 kg/s**, RMSE **0.368319 kg/s** and
+R² **0.555362**. The 60-row quick smoke run scored the same validation rows
+with MAE **0.415270 kg/s**. These are VQR validation results; the production
+champion has not been selected and the test set has not been evaluated.
 
 ### Run the existing ETL pipeline
 

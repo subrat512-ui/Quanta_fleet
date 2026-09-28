@@ -23,10 +23,13 @@ reason, migration impact and affected tests before implementation.
 | D016 | Phase 5 uses saved Phase 4 training/validation arrays and explicit single validation scoring. | Prevents a new random split, preprocessing refit, and test-based tuning. |
 | D017 | Quick mode samples training rows deterministically by vessel; validation remains complete. | Bounds smoke-run cost without changing shared row identities. |
 | D018 | XGBoost is pinned to 3.2.0 for the Python 3.11 project environment. | The originally planned 3.4.1 requires Python 3.12; macOS also needs the OpenMP runtime. |
+| D019 | Phase 7 uses the six saved Phase 4 VQR angles without refitting their scaler. | Five features are bounded in `[0, pi]`; wind direction is a direct periodic angle in `[0, 2pi]`. No Phase 4 migration is needed. |
+| D020 | Initial VQR has six `RY` input rotations, one linear-CX `real_amplitudes` repetition, 12 weights and the mean single-qubit Z observable. | The shallow six-qubit circuit includes feature interactions through CX gates and has a bounded expectation output. |
+| D021 | VQR uses exact `QMLEstimator`, scaled-target squared error and COBYLA with deterministic initial weights. | Simulator execution is reproducible and does not imply real-hardware use or quantum advantage. SciPy 1.17.1 enforces at least 14 COBYLA evaluations for 12 weights, so quick mode uses 14 rather than the originally proposed 5; normal remains 80. |
+| D022 | VQR fitting samples 60 quick or 600 normal training rows proportionally and evenly by vessel; both modes score the complete saved validation partition. | Bounds fitting cost, preserves the shared validation identities and keeps the test partition untouched. Quick metrics are smoke evidence only. |
+| D023 | VQR depends optionally on Qiskit 2.5.2 and Qiskit Machine Learning 0.9.1. | V2 exact statevector primitives and QML optimizers need neither Aer nor `qiskit-algorithms`; ordinary non-quantum tests remain usable without quantum packages. |
 
 ## Open decisions
 
 - Exact dataset revision pin/fingerprint representation.
-- Final Qiskit compatible version pins.
 - Whether champion refit uses train+validation for every model family.
-- VQR feature-map, ansatz and optimizer selected after a small benchmark.
