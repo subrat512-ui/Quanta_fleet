@@ -204,8 +204,25 @@ VQR inputs have six rotation angles. Both use the same row identities and
 unscaled kg/s target. Continuous-feature medians, circular-mean wind-direction
 imputation and scaling fit on training rows only.
 An existing stage is never overwritten. The generated files are ignored by Git.
-Classical tuning and simulator-based VQR training follow in later phases;
-QPSO-SVR is deferred from the current MVP roadmap.
+The saved train and validation arrays can be used for bounded classical
+regression tuning. Supply the explicit absolute run directory and the pinned
+version and canonical SHA-256 from the Phase 4 handoff:
+
+```bash
+python -m greenfleet.ml_pipeline.training.fuelcast_classical train \
+  --run-dir /absolute/path/to/artifacts/fuelcast-phase1-20260928-002 \
+  --mode quick \
+  --expected-version eb6a6ec011c1c9a2cbce21459e22be4c77ef84dd \
+  --expected-canonical-sha256 262428b4b2002435806f60aa9939755798dc9fe208b0c4b5d963a9200639cc65
+```
+
+Use `--mode normal` for full training rows and larger search budgets. The stage
+writes four loadable candidates and a validation-only leaderboard to
+`05_classical/<mode>/`; it does not choose a production champion or read the
+test partition. `verify --run-dir ABSOLUTE_RUN --candidate-dir ABSOLUTE_CANDIDATE`
+checks a fresh-load prediction. XGBoost requires its pinned Python package and
+the OpenMP runtime (`libomp` on macOS). Simulator-based VQR training follows in
+a later phase; QPSO-SVR is deferred from the current MVP roadmap.
 
 ### Run the existing ETL pipeline
 
