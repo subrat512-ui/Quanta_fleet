@@ -12,7 +12,7 @@
 | 0 | Foundation | passed | none |
 | 1 | FuelCast ingestion | passed | 0 |
 | 2 | ETL | passed | 1 |
-| 3 | MongoDB | pending | 2 |
+| 3 | MongoDB | in_progress | 2 |
 | 4 | Split and preprocessing | pending | 2 |
 | 5 | Classical tuning | pending | 4 |
 | 6 | QPSO-SVR | pending | 4 |
@@ -76,6 +76,132 @@ blocker/major findings, secrets, datasets, artifacts or unrelated changes.
 - No new split created inside a trainer.
 - No test-set use during tuning or selection.
 - No unsupported quantum claims.
+
+## Approved Phase 3 plan — idempotent FuelCast MongoDB loading
+
+Authorization: the user supplied and approved this Phase 3 plan. Work occurs
+only on `feat/fuelcast-e2e-clean` after Phase 2 replay commit `50dd953`. The
+authoritative input is run `fuelcast-phase1-20260928-002`, canonical SHA-256
+`262428b4b2002435806f60aa9939755798dc9fe208b0c4b5d963a9200639cc65`,
+dataset version `eb6a6ec011c1c9a2cbce21459e22be4c77ef84dd`, and 173,974 rows.
+
+### Files and interfaces
+
+- Add `greenfleet.database.fuelcast` with
+  `preflight_fuelcast_mongodb(run_dir, *, uri=None, database="greenfleet",
+  collection="fuelcast_telemetry")` and `run_fuelcast_mongodb(run_dir, *,
+  uri=None, database="greenfleet", collection="fuelcast_telemetry",
+  batch_size=1000)`, plus a run-ID CLI whose default mode is read-only
+  preflight. The CLI obtains credentials only from `MONGODB_URI`.
+- Add `FuelCastMongoPreflight` and a `FuelCastMongoArtifact` carrying report
+  path, status, dataset version, expected rows, and verified loaded rows.
+- Extend FuelCast constants with destination defaults and deterministic index
+  names, and export the FuelCast API without changing the generic loader,
+  `vessel_telemetry` default, or `python -m greenfleet.database SOURCE`.
+- Add focused mocked unit tests and a guarded, opt-in integration test. Update
+  README, this plan, and the current handoff. Do not change Phase 4 or ML code.
+
+### Validation, loading, and verification contract
+
+Capture the canonical CSV and audit as immutable bytes before connecting, then
+validate dataset identity, source run, version, hash, ordered schema, counts,
+vessels, uniqueness, deterministic IDs, integer times, finite nonnegative
+target, and optional finite feature values. Convert only the eleven canonical
+fields to explicit BSON-safe Python types, mapping blank features to null.
+
+Preflight is mandatory and read-only. It reports sanitized database,
+collection, counts, active-version membership/content, index definitions, and
+missing/null/duplicate keys. Conflicting canonical content, extra active-version
+IDs, unsafe duplicate keys, or conflicting required index definitions block all
+writes. Equivalent indexes are reused; existing indexes are never dropped or
+altered.
+
+Apply repeats preflight, creates only missing required indexes, and sends
+unordered batches of `UpdateOne({"record_id": ...},
+{"$setOnInsert": canonical_document}, upsert=True)`. Post-verification requires
+exact active-version total/per-vessel counts and IDs, canonical equality,
+unique record and vessel/time keys, and required indexes. Reruns must report
+zero upserts and modifications. Every apply attempt atomically replaces a
+sanitized `03_mongodb/mongodb_load_report.json`, including safe stage/type
+failure metadata but never URIs, addresses, credentials, or raw driver errors.
+
+### Tests, gate, risks, and rollback
+
+Mocked tests cover BSON types/nulls; all source invariant failures before
+connection; preflight findings; unrelated state preservation; extra-field
+tolerance; conflicts and extra IDs blocking writes; equivalent/conflicting
+indexes; exact unordered `$setOnInsert` batches; first, partial, and repeated
+loads; every post-verification dimension; partial bulk failure reporting and
+safe replay; secret-safe output/reporting; and atomic report replacement.
+
+Run the focused suite, full offline suite, both database help commands, and
+`git diff --check`. The integration test runs only with `MONGODB_URI`,
+`RUN_FUELCAST_MONGODB_INTEGRATION=1`, and explicit database/collection variables;
+the collection must begin `fuelcast_integration_`, uses three synthetic rows,
+runs twice, and never deletes data. After offline and independent read-only
+review gates pass, run the authoritative read-only preflight and report its
+sanitized findings. Do not apply to `greenfleet.fuelcast_telemetry` without a
+separate explicit authorization.
+
+Partial unordered writes are recoverable by replay because inserts are
+idempotent; no automatic data or index rollback is performed. Concurrent state
+changes, permissions, connectivity, or report-write failures are reported
+safely and never reconciled by deletion. Code rollback is a revert of the
+single scoped Phase 3 commit; database rollback requires a separately
+authorized operator procedure.
+
+### Phase 3 checkpoint — 2026-09-28
+
+The approved plan is persisted and Phase 3 remains `in_progress`. The active
+phase spec mentions orchestration integration, but the approved Phase 3 plan
+defers that work to Phase 9. Implementation now includes FuelCast MongoDB
+constants and package exports, the result artifact, source validation,
+read-only preflight, safe index comparison, unordered idempotent writes,
+post-verification, atomic sanitized reporting, and the dedicated CLI. The
+generic loader and command remain unchanged. README guidance and a guarded
+three-vessel live integration test are present.
+
+Offline gate evidence:
+
+- focused mocked suite: 22 tests total, 21 pass, 1 guarded integration skip;
+- full offline suite: 48 tests total, 47 pass, 1 guarded integration skip;
+- FuelCast and generic database `--help` commands: pass;
+- `git diff --check`: pass.
+
+These checks cover source hash/schema/count and deterministic IDs, exact
+canonical field presence and BSON-safe Python types, index equivalence and
+conflict options, sanitized reports, partial bulk-write numeric progress,
+replay, each post-verification invariant, CLI secrecy, and atomic report
+replacement failure, and BSON int64 bounds before connection. PyMongo 4.18.0
+is available. Only synthetic temporary test data was produced; it was removed
+by test cleanup.
+
+Independent read-only code review passed with no blocker or major findings;
+the review's minor cleanup was applied. Independent offline test execution
+passed. The test reviewer identified the active phase spec's orchestration
+sentence and a destination-report safety edge. The approved Phase 3 plan
+resolves the contract mismatch: this phase implements standalone persistence,
+and Phase 9 owns orchestrator wiring. Destination names are now validated
+before connection and redacted in failed apply reports, with mocked coverage.
+
+Authorized read-only preflight of run `fuelcast-phase1-20260928-002` passed:
+canonical CSV SHA-256
+`262428b4b2002435806f60aa9939755798dc9fe208b0c4b5d963a9200639cc65`,
+audit SHA-256
+`0f48b7a862703d7cf365d8299b0e32aad626866a963008ce39b12a4953fd264e`,
+dataset version `eb6a6ec011c1c9a2cbce21459e22be4c77ef84dd`; vessel rows
+`cps_poseidon` 105,422, `cps_triton` 25,347, `oss_ceto` 43,205, total
+173,974. The selected `greenfleet.fuelcast_telemetry` collection is absent;
+there are zero collection documents, active-version rows, conflicts, and
+unsafe keys. The three required indexes to create are
+`fuelcast_record_id_unique`, `fuelcast_dataset_version`, and
+`fuelcast_vessel_time`. Preflight returned `safe_to_apply: true` and made no
+database changes.
+
+Pending: scoped status/diff/staging review, commit, and push. The opt-in live
+integration test has not run. MongoDB `--apply` was not run and has no
+authorization from this preflight. No commit or push has occurred. The overall
+Phase 3 gate has not passed; the next phase cannot begin yet.
 
 ## Approved Phase 0 plan — repository foundation
 

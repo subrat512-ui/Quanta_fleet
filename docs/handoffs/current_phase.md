@@ -2,8 +2,9 @@
 
 ## Status
 
-- Current phase: Phase 3 — MongoDB loading (planning pending)
-- State: Phase 2 ETL replayed and verified on a clean branch; draft PR #3 open
+- Current phase: Phase 3 — MongoDB loading (offline gate complete)
+- State: implementation, offline validation, and independent read-only review
+  complete; authorized read-only preflight and commit gate pending
 - Last completed phase: Phase 2 — FuelCast ETL
 - Current branch: `feat/fuelcast-e2e-clean`
 
@@ -112,6 +113,52 @@ documentation commit.
   MongoDB contains previously merged synthetic data; do not treat it as the
   FuelCast canonical load. No MongoDB state was changed in Phase 2.
 - Phase 2 replay commit: `50dd953` on `feat/fuelcast-e2e-clean`; pushed.
+
+## Phase 3 checkpoint — 2026-09-28
+
+- The approved detailed plan is persisted in
+  `docs/plans/fuelcast_e2e_implementation.md`; Phase 3 is `in_progress`.
+- Work completed: FuelCast MongoDB defaults/index definitions, package
+  exports, result artifact, specialized preflight/load/report CLI module,
+  mocked tests, guarded integration test, and README guidance. The loader
+  validates immutable CSV/audit bytes before connection, performs read-only
+  preflight, reuses equivalent indexes, uses unordered `UpdateOne`/
+  `$setOnInsert`, verifies post-state, and writes a sanitized atomic report.
+  Partial bulk-write numeric progress is recorded without driver error text.
+- Modified/created implementation files:
+  `src/greenfleet/constants/fuelcast.py`,
+  `src/greenfleet/database/__init__.py`,
+  `src/greenfleet/artifacts/fuelcast_mongodb_artifact.py`,
+  `src/greenfleet/database/fuelcast.py`, `tests/test_fuelcast_mongodb.py`,
+  `tests/test_fuelcast_mongodb_integration.py`, and `README.md`.
+- Checkpoint documentation also modifies this handoff, the implementation
+  plan, and `docs/specs/phases/phase_03_mongodb.md`.
+- Offline validation: focused suite 22 total (21 pass, 1 guarded live skip);
+  full suite 48 total (47 pass, 1 skip); both database help commands and
+  `git diff --check` pass. PyMongo 4.18.0 and the authoritative local Phase 2
+  inputs are available.
+- Independent read-only code review: PASS, no blocker/major findings; minor
+  cleanup applied. Independent offline test execution: PASS. The test reviewer
+  flagged the active phase spec's orchestration sentence and destination-report
+  safety edge. The approved plan assigns standalone persistence to Phase 3
+  and orchestrator wiring to Phase 9; destination names now validate and
+  failed reports redact invalid values.
+- Authorized read-only preflight of run `fuelcast-phase1-20260928-002`: PASS.
+  Canonical SHA-256
+  `262428b4b2002435806f60aa9939755798dc9fe208b0c4b5d963a9200639cc65`;
+  audit SHA-256
+  `0f48b7a862703d7cf365d8299b0e32aad626866a963008ce39b12a4953fd264e`;
+  dataset version `eb6a6ec011c1c9a2cbce21459e22be4c77ef84dd`.
+  Counts: Poseidon 105,422; Triton 25,347; Ceto 43,205; total 173,974.
+  `greenfleet.fuelcast_telemetry` was absent, with zero documents,
+  active-version rows, conflicts, and unsafe keys. All three indexes remain
+  to create: `fuelcast_record_id_unique`, `fuelcast_dataset_version`, and
+  `fuelcast_vessel_time`. `safe_to_apply` was true; no database state changed.
+- Pending: staged review, commit, and push. The live integration test remains
+  opt-in and unrun. `--apply` was not run or authorized by the preflight.
+  The overall Phase 3 gate has not yet passed. The legacy generic loader and
+  `python -m greenfleet.database SOURCE` remain unchanged.
+- Exact next step: scoped status/diff/staging review and commit/push gate.
 
 ## Clean branch recovery
 
