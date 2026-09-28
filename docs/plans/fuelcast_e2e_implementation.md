@@ -198,10 +198,13 @@ unsafe keys. The three required indexes to create are
 `fuelcast_vessel_time`. Preflight returned `safe_to_apply: true` and made no
 database changes.
 
-Pending: scoped status/diff/staging review, commit, and push. The opt-in live
-integration test has not run. MongoDB `--apply` was not run and has no
-authorization from this preflight. No commit or push has occurred. The overall
-Phase 3 gate has not passed; the next phase cannot begin yet.
+Final gate: focused tests 21 total (20 passed, one guarded integration skip);
+full offline suite 48 total (47 passed, one guarded integration skip); both
+database help commands and `git diff --check` passed; independent final code
+review passed with no blocker or major findings. The opt-in live integration
+test remains unrun by design. MongoDB `--apply` was not run. Phase 3 commit
+`1f9705d2dab8006a2c764edde84adbc465949d5e` was pushed to
+`origin/feat/fuelcast-e2e-clean`. Phase 3 is complete; Phase 4 is next.
 
 ## Approved Phase 0 plan — repository foundation
 

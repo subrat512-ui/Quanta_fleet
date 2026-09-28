@@ -54,6 +54,10 @@ version `eb6a6ec011c1c9a2cbce21459e22be4c77ef84dd`, and vessel counts
 active rows, conflicts, and unsafe keys. All three deterministic indexes
 remain to create; `safe_to_apply` was true. No database state changed.
 
-Pending gates are scoped diff/staging review, commit, and push. The guarded
-integration test has not run against a live server. MongoDB `--apply` was not
-run or authorized by this preflight. The overall Phase 3 gate has not passed.
+Final gate: focused tests 21 total (20 passed, one guarded integration skip);
+full offline suite 48 total (47 passed, one guarded integration skip); both
+database help commands, `git diff --check`, and independent final code review
+passed with no blocker or major findings. The guarded integration test remains
+unrun by design. MongoDB `--apply` was not run. Phase 3 commit
+`1f9705d2dab8006a2c764edde84adbc465949d5e` was pushed to
+`origin/feat/fuelcast-e2e-clean`; Phase 3 is complete and Phase 4 is next.

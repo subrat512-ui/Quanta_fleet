@@ -154,11 +154,14 @@ documentation commit.
   active-version rows, conflicts, and unsafe keys. All three indexes remain
   to create: `fuelcast_record_id_unique`, `fuelcast_dataset_version`, and
   `fuelcast_vessel_time`. `safe_to_apply` was true; no database state changed.
-- Pending: staged review, commit, and push. The live integration test remains
-  opt-in and unrun. `--apply` was not run or authorized by the preflight.
-  The overall Phase 3 gate has not yet passed. The legacy generic loader and
+- Final gate: focused tests 21 total (20 passed, one guarded integration skip);
+  full offline suite 48 total (47 passed, one guarded integration skip); both
+  database help commands, `git diff --check`, and independent final code review
+  passed with no blocker or major findings. The opt-in live integration test
+  remains unrun by design. `--apply` was not run. The legacy generic loader and
   `python -m greenfleet.database SOURCE` remain unchanged.
-- Exact next step: scoped status/diff/staging review and commit/push gate.
+- Phase 3 commit `1f9705d2dab8006a2c764edde84adbc465949d5e` was pushed to
+  `origin/feat/fuelcast-e2e-clean`. Phase 3 is complete; Phase 4 is next.
 
 ## Clean branch recovery
 
