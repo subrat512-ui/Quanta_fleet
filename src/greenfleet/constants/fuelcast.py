@@ -41,3 +41,11 @@ CANONICAL_UNITS = {
     "current_speed": "m/s",
     "fuel_consumption_kg_s": "kg/s",
 }
+
+MONGODB_DATABASE = "greenfleet"
+MONGODB_COLLECTION = "fuelcast_telemetry"
+MONGODB_INDEXES = (
+    ("fuelcast_record_id_unique", (("record_id", 1),), True),
+    ("fuelcast_dataset_version", (("dataset_version", 1),), False),
+    ("fuelcast_vessel_time", (("vessel_id", 1), ("time_index", 1)), False),
+)

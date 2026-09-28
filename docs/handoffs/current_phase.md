@@ -2,20 +2,23 @@
 
 ## Status
 
-- Current phase: Phase 3 — MongoDB loading (planning pending)
-- State: Phase 2 ETL replayed and verified on a clean branch; draft PR #3 open
-- Last completed phase: Phase 2 — FuelCast ETL
+- Current phase: Phase 5 — classical model tuning (planning pending)
+- State: Phase 4 implementation, independent review, feature commit and push
+  passed; Phase 5 requires a fresh approved plan
+- Last completed phase: Phase 4 — chronological split and preprocessing
 - Current branch: `feat/fuelcast-e2e-clean`
 
 The phase records below describe the original branch. The clean recovery
 branch excludes its tracked environment and runtime-output deletions and the
 unrelated `classical training algorithm` commit. The original branch and its
-commit IDs remain intact.
+commit IDs remain intact. Earlier checkpoint statements are historical; use
+the current status above and `docs/SESSION_HANDOFF.md` for the latest state.
 
 ## Approved scope
 
 FuelCast ingestion, ETL, MongoDB persistence, chronological transformation,
-tuned classical models, QPSO-SVR, VQR, unified evaluation and champion artifact.
+tuned classical models, VQR, unified evaluation and champion artifact.
+QPSO-SVR is deferred from the immediate MVP roadmap; its specification remains.
 
 ## Stable contracts
 
@@ -25,6 +28,25 @@ tuned classical models, QPSO-SVR, VQR, unified evaluation and champion artifact.
 - Split: per-vessel chronological 70/15/15
 - Selection: validation MAE
 - Test: untouched until champion is frozen
+
+## Phase 4 implementation checkpoint
+
+- New API: `run_fuelcast_transformation(run_dir: Path)` and
+  `load_fuelcast_partitions(run_dir: Path)` in
+  `greenfleet.ml_pipeline.transformation.fuelcast`; CLI uses `--run-dir`.
+- The stage verifies the immutable Phase 2 CSV and audit, creates per-vessel
+  chronological 70/15/15 partitions, and saves exact IDs/time boundaries,
+  aligned classical/VQR arrays and training-fitted preprocessors.
+- The pinned canonical run produced 121,780 train, 26,096 validation and
+  26,098 test rows (173,974 total). Its source SHA-256 and version match the
+  Phase 3 handoff. Generated `04_transformation` remains ignored.
+- Focused tests 9/9; full offline suite 57 total (56 passed, one guarded
+  MongoDB integration skip); CLI help and diff check passed. Independent
+  read-only test and code reviews: PASS, with the circular wind finding fixed.
+- Phase 4 commit `1c8e93365c16823e2756c3b649d5af4ead236d30`
+  (`feat(ml): add chronological splitting and preprocessing`) was pushed to
+  `origin/feat/fuelcast-e2e-clean` on 2026-09-28.
+- Phase 5 classical training is next; start with its spec-to-plan cycle.
 
 ## Phase 0 objective
 
@@ -112,6 +134,84 @@ documentation commit.
   MongoDB contains previously merged synthetic data; do not treat it as the
   FuelCast canonical load. No MongoDB state was changed in Phase 2.
 - Phase 2 replay commit: `50dd953` on `feat/fuelcast-e2e-clean`; pushed.
+
+## Phase 3 checkpoint — 2026-09-28
+
+- The approved detailed plan is persisted in
+  `docs/plans/fuelcast_e2e_implementation.md`; Phase 3 is `in_progress`.
+- Work completed: FuelCast MongoDB defaults/index definitions, package
+  exports, result artifact, specialized preflight/load/report CLI module,
+  mocked tests, guarded integration test, and README guidance. The loader
+  validates immutable CSV/audit bytes before connection, performs read-only
+  preflight, reuses equivalent indexes, uses unordered `UpdateOne`/
+  `$setOnInsert`, verifies post-state, and writes a sanitized atomic report.
+  Partial bulk-write numeric progress is recorded without driver error text.
+- Modified/created implementation files:
+  `src/greenfleet/constants/fuelcast.py`,
+  `src/greenfleet/database/__init__.py`,
+  `src/greenfleet/artifacts/fuelcast_mongodb_artifact.py`,
+  `src/greenfleet/database/fuelcast.py`, `tests/test_fuelcast_mongodb.py`,
+  `tests/test_fuelcast_mongodb_integration.py`, and `README.md`.
+- Checkpoint documentation also modifies this handoff, the implementation
+  plan, and `docs/specs/phases/phase_03_mongodb.md`.
+- Offline validation: focused suite 22 total (21 pass, 1 guarded live skip);
+  full suite 48 total (47 pass, 1 skip); both database help commands and
+  `git diff --check` pass. PyMongo 4.18.0 and the authoritative local Phase 2
+  inputs are available.
+- Independent read-only code review: PASS, no blocker/major findings; minor
+  cleanup applied. Independent offline test execution: PASS. The test reviewer
+  flagged the active phase spec's orchestration sentence and destination-report
+  safety edge. The approved plan assigns standalone persistence to Phase 3
+  and orchestrator wiring to Phase 9; destination names now validate and
+  failed reports redact invalid values.
+- Authorized read-only preflight of run `fuelcast-phase1-20260928-002`: PASS.
+  Canonical SHA-256
+  `262428b4b2002435806f60aa9939755798dc9fe208b0c4b5d963a9200639cc65`;
+  audit SHA-256
+  `0f48b7a862703d7cf365d8299b0e32aad626866a963008ce39b12a4953fd264e`;
+  dataset version `eb6a6ec011c1c9a2cbce21459e22be4c77ef84dd`.
+  Counts: Poseidon 105,422; Triton 25,347; Ceto 43,205; total 173,974.
+  `greenfleet.fuelcast_telemetry` was absent, with zero documents,
+  active-version rows, conflicts, and unsafe keys. All three indexes remain
+  to create: `fuelcast_record_id_unique`, `fuelcast_dataset_version`, and
+  `fuelcast_vessel_time`. `safe_to_apply` was true; no database state changed.
+- Final gate: focused tests 22 total (21 passed, one guarded integration skip);
+  full offline suite 48 total (47 passed, one guarded integration skip); both
+  database help commands, `git diff --check`, and independent final code review
+  passed with no blocker or major findings. The opt-in live integration test
+  remains unrun by design. At that implementation gate, `--apply` had not yet
+  run; the subsequent production load is recorded below. The legacy generic
+  loader and `python -m greenfleet.database SOURCE` remain unchanged.
+- Phase 3 commit `1f9705d2dab8006a2c764edde84adbc465949d5e` was pushed to
+  `origin/feat/fuelcast-e2e-clean`. Phase 3 is complete; Phase 4 is next.
+
+## Phase 3 production load and Phase 4 entry
+
+The existing Phase 3 `--apply` path loaded the immutable canonical source
+`artifacts/fuelcast-phase1-20260928-002/02_etl/fuelcast_clean.csv` into
+**`greenfleet.fuelcast_telemetry`**. The canonical version is
+`eb6a6ec011c1c9a2cbce21459e22be4c77ef84dd`, with 173,974 rows and CSV
+SHA-256 `262428b4b2002435806f60aa9939755798dc9fe208b0c4b5d963a9200639cc65`.
+The generated report is
+`artifacts/fuelcast-phase1-20260928-002/03_mongodb/mongodb_load_report.json`.
+
+First load: 173,974 attempted, 173,974 inserted, 0 skipped/existing, and 0
+modified. Post-load verification: collection and active-version counts both
+173,974; every canonical ID present; zero canonical-content conflicts,
+duplicate `record_id` values, duplicate active-version vessel/time keys, or
+extra active-version IDs; all three required indexes verified. The follow-up
+read-only preflight recognized all 173,974 records as existing, found zero
+conflicts and zero indexes to create, and implies 0 new inserts on a subsequent
+idempotent load. No second write was run.
+
+Preserve all legacy MongoDB collections and data. Phase 4 must use this
+canonical FuelCast CSV and version, never the old merged synthetic dataset.
+It must not train by querying mutable MongoDB state. The exact Phase 4
+objective is “Create the single saved data contract consumed by every model
+family.” Phase 4 has not begun; start with the fresh spec-to-plan cycle in
+`docs/specs/phases/phase_04_transformation.md`. See `docs/SESSION_HANDOFF.md`
+for the complete fresh-session reading list, subagent workflow, commits, and
+remaining assumptions.
 
 ## Clean branch recovery
 

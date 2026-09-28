@@ -52,6 +52,7 @@ The repository currently contains a data-foundation layer, partial ML training c
 - Dataset validation, cleaning, transformation, and audit reporting.
 - Command-line ETL workflow.
 - Idempotent batched MongoDB loading of processed vessel telemetry.
+- Read-only FuelCast MongoDB preflight and separately invoked canonical load.
 - Structured logging and automated tests for the current pipeline.
 - ML ingestion, validation, preprocessing, and regression-training components under `ml_pipeline/`, with integration gaps described below.
 - A Streamlit prototype in `app.py`, branded "Green Quanta", with editable fleet and route tables and demonstration results.
@@ -152,8 +153,59 @@ This validates the pinned source manifest and snapshot, then writes
 only the approved six features, renames the total fuel target to
 `fuel_consumption_kg_s`, removes invalid targets and times, and preserves missing
 features for training-only preprocessing. The audit records removals and feature
-quality by vessel. An existing ETL stage is never overwritten. MongoDB loading
-and FuelCast model training are separate later phases.
+quality by vessel. An existing ETL stage is never overwritten. FuelCast model
+training remains a later phase.
+
+### Inspect and load canonical FuelCast into MongoDB
+
+Export `MONGODB_URI` in the process environment. The FuelCast command reads
+credentials only from that variable and does not load `.env` files. Its default
+mode validates the ETL CSV and audit, then performs a read-only database
+preflight. It prints database and collection existence, existing counts and
+indexes, expected IDs already present, and any conflicts. Use the run ID from
+the completed ETL stage:
+
+```bash
+python -m greenfleet.database.fuelcast --run-id fuelcast-20260928 --preflight-only
+```
+
+After reviewing a safe preflight, explicitly request the load:
+
+```bash
+python -m greenfleet.database.fuelcast --run-id fuelcast-20260928 --apply
+```
+
+The default destination is `greenfleet.fuelcast_telemetry`; `--database` and
+`--collection` can select another destination. Apply repeats preflight, creates
+missing required indexes, and upserts by deterministic `record_id` in unordered
+batches of 1,000. Existing matching documents and their extra fields are
+preserved. Any conflict blocks writes. Each apply attempt writes a sanitized
+`artifacts/<run-id>/03_mongodb/mongodb_load_report.json`, including verification
+of active-version counts, row IDs and canonical values. A partial write can be
+replayed safely; the loader never deletes records or indexes. Do not commit
+FuelCast data, MongoDB credentials or runtime reports.
+
+### Create shared FuelCast model partitions
+
+Run Phase 4 against the existing canonical run directory:
+
+```bash
+python -m greenfleet.ml_pipeline.transformation.fuelcast \
+  --run-dir artifacts/fuelcast-phase1-20260928-002
+```
+
+The command verifies the canonical CSV against its ETL audit and writes one
+`04_transformation` stage. Each vessel contributes its earliest 70% of rows to
+training, the next 15% to validation and the final 15% to testing. The stage
+saves the exact row IDs and time boundaries, aligned `train.npz`,
+`validation.npz`, and `test.npz` files, fitted preprocessors, and a feature
+schema. Classical inputs have seven columns after circular wind encoding;
+VQR inputs have six rotation angles. Both use the same row identities and
+unscaled kg/s target. Continuous-feature medians, circular-mean wind-direction
+imputation and scaling fit on training rows only.
+An existing stage is never overwritten. The generated files are ignored by Git.
+Classical tuning and simulator-based VQR training follow in later phases;
+QPSO-SVR is deferred from the current MVP roadmap.
 
 ### Run the existing ETL pipeline
 
