@@ -12,7 +12,7 @@
 | 0 | Foundation | passed | none |
 | 1 | FuelCast ingestion | passed | 0 |
 | 2 | ETL | passed | 1 |
-| 3 | MongoDB | in_progress | 2 |
+| 3 | MongoDB | passed | 2 |
 | 4 | Split and preprocessing | pending | 2 |
 | 5 | Classical tuning | pending | 4 |
 | 6 | QPSO-SVR | pending | 4 |
