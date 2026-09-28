@@ -2,14 +2,12 @@
 
 ## Current state
 
-Phase 3 — idempotent FuelCast MongoDB loading — is **COMPLETE**. The Phase 3
-implementation, offline tests, independent reviews, feature commit, and push
-passed. The authorized production load then completed with the existing
-`greenfleet.database.fuelcast --apply` CLI and its built-in post-load
-verification. A separate read-only preflight confirmed the loaded state.
-The Phase 4 plan has since been approved and recorded in
-`docs/plans/fuelcast_e2e_implementation.md`; implementation and independent
-review passed. The Phase 4 scoped commit and push are pending.
+Phase 4 — chronological split and preprocessing — is **COMPLETE**. Phase 3
+MongoDB loading and its production verification were completed earlier.
+The Phase 4 plan was approved and recorded in
+`docs/plans/fuelcast_e2e_implementation.md`. Its implementation, tests,
+independent review, scoped commit `1c8e93365c16823e2756c3b649d5af4ead236d30`
+and push passed. Phase 5 classical tuning requires a fresh plan.
 The historical Phase 3 entry notes below describe the state before Phase 4.
 
 Use branch `feat/fuelcast-e2e-clean` at its remote head. The clean worktree in

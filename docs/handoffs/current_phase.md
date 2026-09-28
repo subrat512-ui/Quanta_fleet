@@ -2,10 +2,10 @@
 
 ## Status
 
-- Current phase: Phase 4 — chronological split and preprocessing
-- State: Phase 4 implementation and independent review passed; scoped commit
-  and push pending
-- Last completed phase: Phase 3 — idempotent FuelCast MongoDB loading
+- Current phase: Phase 5 — classical model tuning (planning pending)
+- State: Phase 4 implementation, independent review, feature commit and push
+  passed; Phase 5 requires a fresh approved plan
+- Last completed phase: Phase 4 — chronological split and preprocessing
 - Current branch: `feat/fuelcast-e2e-clean`
 
 The phase records below describe the original branch. The clean recovery
@@ -43,7 +43,10 @@ QPSO-SVR is deferred from the immediate MVP roadmap; its specification remains.
 - Focused tests 9/9; full offline suite 57 total (56 passed, one guarded
   MongoDB integration skip); CLI help and diff check passed. Independent
   read-only test and code reviews: PASS, with the circular wind finding fixed.
-- Phase 5 classical training is next after the Phase 4 commit and push.
+- Phase 4 commit `1c8e93365c16823e2756c3b649d5af4ead236d30`
+  (`feat(ml): add chronological splitting and preprocessing`) was pushed to
+  `origin/feat/fuelcast-e2e-clean` on 2026-09-28.
+- Phase 5 classical training is next; start with its spec-to-plan cycle.
 
 ## Phase 0 objective
 

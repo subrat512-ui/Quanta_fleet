@@ -19,7 +19,7 @@ state and Phase 4 entry conditions.
 | 1 | FuelCast ingestion | passed | 0 |
 | 2 | ETL | passed | 1 |
 | 3 | MongoDB | passed | 2 |
-| 4 | Split and preprocessing | in_progress | 2, 3 |
+| 4 | Split and preprocessing | passed | 2, 3 |
 | 5 | Classical tuning | pending | 4 |
 | 6 | QPSO-SVR | deferred | 4 |
 | 7 | VQR | pending | 4 |
@@ -130,7 +130,10 @@ stage, including its backing directory; the canonical input stays immutable.
   test rows, totaling 173,974. Classical arrays have seven columns, VQR arrays
   six. Saved arrays reload, contain finite transformed values and retain the
   canonical hash and version. Generated files remain ignored.
-- Scoped commit and push: pending final staged-diff gate.
+- Scoped staged-diff gate passed. Phase 4 feature commit
+  `1c8e93365c16823e2756c3b649d5af4ead236d30` was pushed to
+  `origin/feat/fuelcast-e2e-clean` on 2026-09-28. Phase 5 requires a fresh
+  spec-to-plan cycle before implementation.
 
 ## Approved Phase 3 plan — idempotent FuelCast MongoDB loading
 
