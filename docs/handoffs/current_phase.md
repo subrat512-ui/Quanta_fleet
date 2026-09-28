@@ -2,13 +2,15 @@
 
 ## Status
 
-- Current phase: Phase 7 — simulator VQR gate passed; commit/push pending
+- Current phase: Phase 7 complete and pushed; Phase 8 requires a fresh plan
 - State: Phase 5 classical tuning is complete. Phase 6 QPSO-SVR remains
   deferred. Phase 7 implementation, real quick/normal validation and independent
-  reviews passed on `feat/fuelcast-vqr`. The scoped commit and push are pending.
+  reviews passed on `feat/fuelcast-vqr`. Commit
+  `acab7575a37754ed81ea36354377d68b1a82bb10` was pushed to
+  `origin/feat/fuelcast-vqr` on 2026-09-29.
   No production champion or test evaluation exists.
 - Last completed phase gate: Phase 7 — simulator-based VQR
-- Current branch: `feat/fuelcast-vqr`
+- Current branch: `feat/fuelcast-vqr`, tracking `origin/feat/fuelcast-vqr`
 
 Phase 7 uses the authoritative run `fuelcast-phase1-20260928-002` (revision
 `eb6a6ec011c1c9a2cbce21459e22be4c77ef84dd`, canonical SHA-256
@@ -42,10 +44,10 @@ prediction verification. Guarded focused tests passed 11/11; ordinary focused
 tests had five passes and six guarded skips; the full offline suite had 70
 passes and seven opt-in skips using `DYLD_LIBRARY_PATH`. Independent code and
 test reviews passed with no blocker or major findings, and `git diff --check`
-passed. Phase 7 is complete pending the scoped commit and push. QPSO-SVR
+passed. Phase 7 is complete and pushed. QPSO-SVR
 remains deferred. The generated artifacts are ignored; the test partition was
 not evaluated or used for predictions, and no production champion was chosen.
-Phase 8 requires a fresh plan after the Phase 7 push.
+Phase 8 requires a fresh plan before implementation.
 
 Phase 5 reads only saved Phase 4 training and validation partitions from an
 explicit run directory. Quick and normal searches have separate output

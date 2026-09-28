@@ -4,11 +4,14 @@
 
 Phase 5 — bounded classical tuning — is **COMPLETE** and merged into
 `origin/main`. Phase 7 simulator VQR implementation and review gate passed on
-`feat/fuelcast-vqr` from `origin/main` at `7375e74`; scoped commit and push
-remain pending. The approved plan and measured results are in
+`feat/fuelcast-vqr` from `origin/main` at `7375e74`. Feature commit
+`acab7575a37754ed81ea36354377d68b1a82bb10` was pushed to
+`origin/feat/fuelcast-vqr` on 2026-09-29; the branch tracks that remote. The
+approved plan and measured results are in
 `docs/plans/fuelcast_e2e_implementation.md`.
 Phase 6 QPSO-SVR remains deferred. The test partition and final champion remain
-untouched. Historical text below describes earlier phase entry conditions.
+untouched. Phase 8 requires a fresh plan before implementation. Historical text
+below describes earlier phase entry conditions.
 
 The authoritative run `fuelcast-phase1-20260928-002` produced a normal VQR
 validation artifact with 600 sampled training rows, 80 COBYLA evaluations,

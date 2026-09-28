@@ -22,7 +22,7 @@ state and handoff.
 | 4 | Split and preprocessing | passed | 2, 3 |
 | 5 | Classical tuning | passed | 4 |
 | 6 | QPSO-SVR | deferred | 4 |
-| 7 | VQR | passed; commit/push pending | 4 |
+| 7 | VQR | passed and pushed | 4 |
 | 8 | Model selection | pending | 5, 7 |
 | 9 | Orchestration | pending | 3, 8 |
 
@@ -47,7 +47,8 @@ Every phase starts with a fresh spec-to-plan cycle:
 
 ## Feature branch and commit plan
 
-Current Phase 7 branch: `feat/fuelcast-vqr`. Earlier phases used
+Phase 7 branch: `feat/fuelcast-vqr`, tracking `origin/feat/fuelcast-vqr`.
+Earlier phases used
 `feat/fuelcast-e2e-clean` and `feat/fuelcast-classical-models`.
 
 | Phase | Commit subject |
@@ -180,9 +181,11 @@ fresh-process reconstruction and prediction verification. Guarded VQR tests:
 skipped; full offline suite: 70 passed, seven opt-in skips with
 `DYLD_LIBRARY_PATH`; `git diff --check` and independent code/test reviews:
 PASS with no blocker or major findings. Generated outputs remain ignored. The
-Phase 7 gate is complete; scoped commit `feat(quantum): add simulator-based VQR`
-and push to `feat/fuelcast-vqr` remain pending. QPSO-SVR stays deferred. No
-test evaluation or production champion selection occurred.
+Phase 7 feature commit `acab7575a37754ed81ea36354377d68b1a82bb10`
+(`feat(quantum): add simulator-based VQR`) was pushed to
+`origin/feat/fuelcast-vqr` on 2026-09-29. Phase 7 is complete. QPSO-SVR stays
+deferred. No test evaluation or production champion selection occurred. Phase 8
+requires a fresh specification-to-plan cycle before implementation.
 
 ## Approved Phase 4 plan — chronological split and preprocessing
 
