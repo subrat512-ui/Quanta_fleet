@@ -7,8 +7,10 @@ implementation, offline tests, independent reviews, feature commit, and push
 passed. The authorized production load then completed with the existing
 `greenfleet.database.fuelcast --apply` CLI and its built-in post-load
 verification. A separate read-only preflight confirmed the loaded state.
-**Phase 4 has not started.** Do not treat this handoff as an approved Phase 4
-implementation plan.
+The Phase 4 plan has since been approved and recorded in
+`docs/plans/fuelcast_e2e_implementation.md`; implementation and independent
+review passed. The Phase 4 scoped commit and push are pending.
+The historical Phase 3 entry notes below describe the state before Phase 4.
 
 Use branch `feat/fuelcast-e2e-clean` at its remote head. The clean worktree in
 this session is `/private/tmp/fuelcast-e2e-clean`; the original worktree at

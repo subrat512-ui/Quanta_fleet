@@ -2,9 +2,9 @@
 
 ## Status
 
-- Current phase: Phase 4 — chronological split and preprocessing (not started)
-- State: Phase 3 COMPLETE, including the authorized MongoDB load and
-  post-load verification; Phase 4 requires a fresh approved plan
+- Current phase: Phase 4 — chronological split and preprocessing
+- State: Phase 4 implementation and independent review passed; scoped commit
+  and push pending
 - Last completed phase: Phase 3 — idempotent FuelCast MongoDB loading
 - Current branch: `feat/fuelcast-e2e-clean`
 
@@ -17,7 +17,8 @@ the current status above and `docs/SESSION_HANDOFF.md` for the latest state.
 ## Approved scope
 
 FuelCast ingestion, ETL, MongoDB persistence, chronological transformation,
-tuned classical models, QPSO-SVR, VQR, unified evaluation and champion artifact.
+tuned classical models, VQR, unified evaluation and champion artifact.
+QPSO-SVR is deferred from the immediate MVP roadmap; its specification remains.
 
 ## Stable contracts
 
@@ -27,6 +28,22 @@ tuned classical models, QPSO-SVR, VQR, unified evaluation and champion artifact.
 - Split: per-vessel chronological 70/15/15
 - Selection: validation MAE
 - Test: untouched until champion is frozen
+
+## Phase 4 implementation checkpoint
+
+- New API: `run_fuelcast_transformation(run_dir: Path)` and
+  `load_fuelcast_partitions(run_dir: Path)` in
+  `greenfleet.ml_pipeline.transformation.fuelcast`; CLI uses `--run-dir`.
+- The stage verifies the immutable Phase 2 CSV and audit, creates per-vessel
+  chronological 70/15/15 partitions, and saves exact IDs/time boundaries,
+  aligned classical/VQR arrays and training-fitted preprocessors.
+- The pinned canonical run produced 121,780 train, 26,096 validation and
+  26,098 test rows (173,974 total). Its source SHA-256 and version match the
+  Phase 3 handoff. Generated `04_transformation` remains ignored.
+- Focused tests 9/9; full offline suite 57 total (56 passed, one guarded
+  MongoDB integration skip); CLI help and diff check passed. Independent
+  read-only test and code reviews: PASS, with the circular wind finding fixed.
+- Phase 5 classical training is next after the Phase 4 commit and push.
 
 ## Phase 0 objective
 

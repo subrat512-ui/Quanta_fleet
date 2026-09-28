@@ -185,6 +185,28 @@ of active-version counts, row IDs and canonical values. A partial write can be
 replayed safely; the loader never deletes records or indexes. Do not commit
 FuelCast data, MongoDB credentials or runtime reports.
 
+### Create shared FuelCast model partitions
+
+Run Phase 4 against the existing canonical run directory:
+
+```bash
+python -m greenfleet.ml_pipeline.transformation.fuelcast \
+  --run-dir artifacts/fuelcast-phase1-20260928-002
+```
+
+The command verifies the canonical CSV against its ETL audit and writes one
+`04_transformation` stage. Each vessel contributes its earliest 70% of rows to
+training, the next 15% to validation and the final 15% to testing. The stage
+saves the exact row IDs and time boundaries, aligned `train.npz`,
+`validation.npz`, and `test.npz` files, fitted preprocessors, and a feature
+schema. Classical inputs have seven columns after circular wind encoding;
+VQR inputs have six rotation angles. Both use the same row identities and
+unscaled kg/s target. Continuous-feature medians, circular-mean wind-direction
+imputation and scaling fit on training rows only.
+An existing stage is never overwritten. The generated files are ignored by Git.
+Classical tuning and simulator-based VQR training follow in later phases;
+QPSO-SVR is deferred from the current MVP roadmap.
+
 ### Run the existing ETL pipeline
 
 The ETL command reads a source CSV, validates and normalizes it, writes the processed dataset, and produces an audit report.

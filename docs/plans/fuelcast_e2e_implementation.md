@@ -11,6 +11,7 @@ state and Phase 4 entry conditions.
 - `in_progress`: active phase
 - `blocked`: cannot continue without a decision
 - `passed`: implemented and phase gate accepted
+- `deferred`: retained in the specification, outside the current MVP sequence
 
 | Phase | Name | Status | Depends on |
 | --- | --- | --- | --- |
@@ -18,11 +19,11 @@ state and Phase 4 entry conditions.
 | 1 | FuelCast ingestion | passed | 0 |
 | 2 | ETL | passed | 1 |
 | 3 | MongoDB | passed | 2 |
-| 4 | Split and preprocessing | pending | 2 |
+| 4 | Split and preprocessing | in_progress | 2, 3 |
 | 5 | Classical tuning | pending | 4 |
-| 6 | QPSO-SVR | pending | 4 |
+| 6 | QPSO-SVR | deferred | 4 |
 | 7 | VQR | pending | 4 |
-| 8 | Model selection | pending | 5, 6, 7 |
+| 8 | Model selection | pending | 5, 7 |
 | 9 | Orchestration | pending | 3, 8 |
 
 ## Phase execution protocol
@@ -39,14 +40,14 @@ Every phase starts with a fresh spec-to-plan cycle:
 7. Independent test and reviewer agents perform the broad phase gate.
 8. Fix all blocker/major findings and repeat validation.
 9. On PASS, stage only phase-owned changes and create the scoped commit.
-10. Push `feat/fuelcast-e2e-pipeline` to GitHub.
+10. Push `feat/fuelcast-e2e-clean` to GitHub.
 11. Record commit SHA, commands, test/review result and push state here and in
     the handoff.
 12. Begin the next phase only after the push succeeds.
 
 ## Feature branch and commit plan
 
-Branch: `feat/fuelcast-e2e-pipeline`
+Branch: `feat/fuelcast-e2e-clean`
 
 | Phase | Commit subject |
 | --- | --- |
@@ -81,6 +82,55 @@ blocker/major findings, secrets, datasets, artifacts or unrelated changes.
 - No new split created inside a trainer.
 - No test-set use during tuning or selection.
 - No unsupported quantum claims.
+
+## Approved Phase 4 plan — chronological split and preprocessing
+
+Authorization: the user approved the Phase 4 plan and requested implementation.
+Phase 3 is complete on the clean branch at `e8644bf`. The immutable canonical
+input is run `fuelcast-phase1-20260928-002`, version
+`eb6a6ec011c1c9a2cbce21459e22be4c77ef84dd`, CSV SHA-256
+`262428b4b2002435806f60aa9939755798dc9fe208b0c4b5d963a9200639cc65`.
+
+Add `src/greenfleet/ml_pipeline/transformation/fuelcast.py` with
+`run_fuelcast_transformation(run_dir: Path) -> FuelCastTransformationArtifact`,
+a `--run-dir` CLI and a validated partition loader. Add the artifact class under
+`src/greenfleet/artifacts/`. Validate the canonical CSV and Phase 2 audit,
+split each vessel at `floor(0.70n)` and `floor(0.85n)`, assert disjoint row IDs
+and strict temporal boundaries, and atomically publish `04_transformation`.
+
+Persist aligned train/validation/test NPZ files with classical features, six
+VQR angle inputs, original and scaled targets, row IDs, vessel IDs and time
+indexes. Fit median imputation for five continuous inputs and circular-mean
+imputation for wind direction on training only. Fit classical circular direction
+encoding and standard scaling, plus separate training-only VQR angle and target
+scaling. Persist all preprocessors, the feature schema
+and split manifest. Preserve the legacy random-split API for its callers.
+
+Add `tests/test_fuelcast_transformation.py` for boundaries, identities, audit
+integrity, no future-statistic leakage, encoding, scaling, reload and atomic
+publication. Update README and handoffs. Mark QPSO-SVR deferred for the current
+MVP while retaining its specification; classical and VQR remain the active
+comparison. No new dependency or database migration is required.
+
+Run focused and full offline tests, CLI help, `git diff --check` and an
+authorized local canonical-run check. Require independent read-only test and
+code reviews, fix major findings, inspect the staged diff, then commit as
+`feat(ml): add chronological splitting and preprocessing` and push the clean
+branch. Rollback is a scoped commit revert and removal of the ignored generated
+stage, including its backing directory; the canonical input stays immutable.
+
+### Phase 4 implementation gate
+
+- Focused Phase 4 tests: 9/9 passed. Full offline suite: 57 total, 56 passed,
+  one guarded MongoDB integration skip. CLI help and `git diff --check` passed.
+- Independent read-only test review: PASS. Independent code review: PASS after
+  replacing degree-median wind imputation with a training-fitted circular mean,
+  preserving exact int64 time indexes and checking loader vessel/time alignment.
+- Pinned canonical run produced 121,780 training, 26,096 validation and 26,098
+  test rows, totaling 173,974. Classical arrays have seven columns, VQR arrays
+  six. Saved arrays reload, contain finite transformed values and retain the
+  canonical hash and version. Generated files remain ignored.
+- Scoped commit and push: pending final staged-diff gate.
 
 ## Approved Phase 3 plan — idempotent FuelCast MongoDB loading
 
