@@ -1,16 +1,34 @@
 # Current Project Handoff
 
+## Phase 8 completion (2026-09-29)
+
+Phase 8 selected normal-mode XGBoost on the complete 26,096-row validation
+partition (MAE 0.12016408036458692 kg/s). The saved model and training-fitted
+preprocessing were frozen with `refit: false`, verified in a fresh process and
+evaluated once on 26,098 saved test rows. Test MAE is 0.12854118081363877
+kg/s, RMSE 0.1841633970560541, R² 0.8921833518766525. Per-vessel test MAE:
+Poseidon 0.11105636056362754 (15,814 rows), Triton 0.24624725780310447
+(3,803), Ceto 0.10213611009040768 (6,481). The generated outputs are under
+`artifacts/fuelcast-phase1-20260928-002/07_evaluation/` and
+`artifacts/final_model/` and remain ignored by Git. All test IDs are unique,
+ordered and hash-verified.
+
+Phase 8 focused tests passed 11/11; the full offline suite ran 88 tests with
+seven opt-in skips. Independent read-only reviews passed after major fixes.
+Phase 9 owns end-to-end orchestration; QPSO-SVR remains deferred. Branch:
+`feat/fuelcast-model-selection`. The first selection output was regenerated
+before test access to incorporate review fixes; no prior test score existed.
+The original worktree's unrelated edits remain untouched. Record the scoped
+commit and push SHA after the final gate.
+
 ## Status
 
-- Current phase: Phase 7 complete and pushed; Phase 8 requires a fresh plan
-- State: Phase 5 classical tuning is complete. Phase 6 QPSO-SVR remains
-  deferred. Phase 7 implementation, real quick/normal validation and independent
-  reviews passed on `feat/fuelcast-vqr`. Commit
-  `acab7575a37754ed81ea36354377d68b1a82bb10` was pushed to
-  `origin/feat/fuelcast-vqr` on 2026-09-29.
-  No production champion or test evaluation exists.
-- Last completed phase gate: Phase 7 — simulator-based VQR
-- Current branch: `feat/fuelcast-vqr`, tracking `origin/feat/fuelcast-vqr`
+- Current phase: Phase 8 complete locally; scoped commit/push pending. Phase 9
+  orchestration is next.
+- State: Phase 8 selected and tested a frozen XGBoost champion. Phase 6
+  QPSO-SVR remains deferred.
+- Last completed phase gate: Phase 8 — validation selection and final test
+- Current branch: `feat/fuelcast-model-selection`
 
 Phase 7 uses the authoritative run `fuelcast-phase1-20260928-002` (revision
 `eb6a6ec011c1c9a2cbce21459e22be4c77ef84dd`, canonical SHA-256

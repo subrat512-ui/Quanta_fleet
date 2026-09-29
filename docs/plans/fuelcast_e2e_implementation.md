@@ -1,6 +1,6 @@
 # FuelCast End-to-End Implementation Plan
 
-Current feature branch: `feat/fuelcast-vqr`. Earlier references
+Current feature branch: `feat/fuelcast-model-selection`. Earlier references
 to `feat/fuelcast-e2e-clean` and `feat/fuelcast-e2e-pipeline` describe prior
 phase worktrees. See `docs/SESSION_HANDOFF.md` for the latest operational
 state and handoff.
@@ -23,7 +23,7 @@ state and handoff.
 | 5 | Classical tuning | passed | 4 |
 | 6 | QPSO-SVR | deferred | 4 |
 | 7 | VQR | passed and pushed | 4 |
-| 8 | Model selection | pending | 5, 7 |
+| 8 | Model selection | passed, push pending | 5, 7 |
 | 9 | Orchestration | pending | 3, 8 |
 
 ## Phase execution protocol
@@ -84,6 +84,78 @@ blocker/major findings, secrets, datasets, artifacts or unrelated changes.
 - No new split created inside a trainer.
 - No test-set use during tuning or selection.
 - No unsupported quantum claims.
+
+## Approved Phase 8 plan — validation champion and final test
+
+Authorization: the user supplied the exact Phase 8 implementation plan for a
+clean worktree at `/private/tmp/fuelcast-phase8`, branch
+`feat/fuelcast-model-selection`, based on `origin/main` commit `0c025d7`.
+The original worktree remains untouched. This plan fixes refit policy to
+`false`; only normal-mode Ridge, Random Forest, Gradient Boosting, XGBoost and
+VQR are eligible. QPSO-SVR remains deferred.
+
+- Add `ml_pipeline/evaluation/fuelcast.py`, package exports and a CLI. Read the
+  saved Phase 4 train/validation contract, verify the five candidate hashes,
+  provenance, ordered validation predictions and recalculated overall and
+  per-vessel MAE/RMSE/R². Break exact MAE ties by candidate name.
+- Persist `07_evaluation/leaderboard.json` and `selection_manifest.json`, then
+  package the selected saved candidate, training-fitted preprocessor and schema
+  under `artifacts/final_model`. Record all hashes, versions and selection
+  provenance. Reject an existing or conflicting selection.
+- Open `test.npz` only in a separate `evaluate` command after the selection and
+  final package are frozen. Check the saved hash, array schema, ordered IDs,
+  uniqueness, per-vessel boundaries, disjoint identities and finite values.
+  Predict with the packaged winner once, publish aligned test predictions,
+  overall/per-vessel metrics, and an evaluation manifest. Never select on test.
+- Add synthetic tests in `tests/test_fuelcast_model_selection.py`; update README,
+  plan, decisions and handoffs. Existing Phase 4/5/7 model and transformation
+  contracts and the Phase 9 orchestrator remain unchanged.
+- Gate: focused Phase 8 and Phase 4/5/7 tests; full offline suite; CLI help;
+  fresh-process inference; `git diff --check`; independent read-only code and
+  test review. Then select from pinned run/version/checksum, inspect leaderboard,
+  verify fresh-process package, evaluate exactly once and audit 26,098 IDs.
+  Commit only Phase 8 files and push the reviewed branch.
+
+Risks: the local macOS XGBoost library needs `libomp.dylib`, supplied here by
+the installed scikit-learn runtime through `DYLD_LIBRARY_PATH`. The package
+loader must retain dependency/version checks and no-fit inference. Rollback
+before final test is limited to removing a newly published, fully inspected
+Phase 8 package and selection directory; never modify candidate or split
+artifacts. Once test is evaluated, preserve its single authoritative report.
+
+### Phase 8 implementation and verification — 2026-09-29
+
+Added the evaluation package and CLI, plus 11 synthetic tests. Selection verifies
+five normal-mode candidates, full aligned validation predictions, recomputed
+overall/per-vessel metrics, versions, provenance and hashes. It reconstructs
+all VQR validation predictions before ranking. It publishes a frozen no-refit
+package and leaderboard without accessing the test array. Evaluation verifies
+the frozen package, source and test identities, then stages complete outputs
+behind atomic symlinks with an interruption recovery marker. Phase 4/5/7
+training files, saved arrays, candidates and Phase 9 orchestrator were unchanged.
+
+- Pinned revision: `eb6a6ec011c1c9a2cbce21459e22be4c77ef84dd`; canonical
+  SHA-256: `262428b4b2002435806f60aa9939755798dc9fe208b0c4b5d963a9200639cc65`.
+- Validation rank on 26,096 rows: XGBoost MAE 0.12016408036458692, Random
+  Forest 0.12093455540592271, Gradient Boosting 0.1316948447165451, Ridge
+  0.24820052304262852, VQR 0.2830684142645837 kg/s. Champion: XGBoost.
+- The first frozen validation output was removed before test access because
+  review found publication/integrity defects. Selection was rerun with the
+  corrected format; no split, candidate or test artifact was changed.
+- Fresh-process package inference passed before and after final evaluation.
+  The one authoritative test on 26,098 rows: MAE 0.12854118081363877,
+  RMSE 0.1841633970560541, R² 0.8921833518766525. Per-vessel test MAE:
+  Poseidon 0.11105636056362754 (15,814 rows), Triton 0.24624725780310447
+  (3,803), Ceto 0.10213611009040768 (6,481), all kg/s.
+- `07_evaluation/test_predictions.npz` has 26,098 ordered unique IDs, all
+  three vessels. Selection, evaluation and final manifests name XGBoost;
+  evaluation and final package hashes verify. Runtime outputs remain ignored.
+- Phase 8 focused tests: 11/11 passed. Phase 4/5/7 regression: 29 tests with
+  six opt-in quantum skips. Full offline suite: 88 tests, seven opt-in skips.
+  CLI help and `git diff --check` passed. Independent read-only code and test
+  reviews found no remaining blocker or major code issue after fixes.
+- Phase 8 branch: `feat/fuelcast-model-selection` from `origin/main` `0c025d7`.
+  Record the pushed scoped feature commit SHA below after the push.
 
 ## Approved Phase 7 plan — simulator-based VQR
 

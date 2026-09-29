@@ -28,8 +28,9 @@ reason, migration impact and affected tests before implementation.
 | D021 | VQR uses exact `QMLEstimator`, scaled-target squared error and COBYLA with deterministic initial weights. | Simulator execution is reproducible and does not imply real-hardware use or quantum advantage. SciPy 1.17.1 enforces at least 14 COBYLA evaluations for 12 weights, so quick mode uses 14 rather than the originally proposed 5; normal remains 80. |
 | D022 | VQR fitting samples 60 quick or 600 normal training rows proportionally and evenly by vessel; both modes score the complete saved validation partition. | Bounds fitting cost, preserves the shared validation identities and keeps the test partition untouched. Quick metrics are smoke evidence only. |
 | D023 | VQR depends optionally on Qiskit 2.5.2 and Qiskit Machine Learning 0.9.1. | V2 exact statevector primitives and QML optimizers need neither Aer nor `qiskit-algorithms`; ordinary non-quantum tests remain usable without quantum packages. |
+| D024 | Phase 8 chooses among four normal-mode classical candidates and normal-mode VQR by the lowest recalculated validation MAE, with candidate-name tie breaks. | Quick modes are smoke evidence and QPSO-SVR is deferred; test metrics cannot alter the champion. |
+| D025 | The Phase 8 champion reuses the verified saved model with `refit: false`. | A frozen model and training-fitted preprocessing make the one final test reproducible across families. |
 
 ## Open decisions
 
 - Exact dataset revision pin/fingerprint representation.
-- Whether champion refit uses train+validation for every model family.
