@@ -269,8 +269,36 @@ advantage claim. QPSO-SVR remains deferred.
 For the pinned FuelCast run, the normal 600-row simulator prototype scored all
 26,096 validation rows with MAE **0.283068 kg/s**, RMSE **0.368319 kg/s** and
 R² **0.555362**. The 60-row quick smoke run scored the same validation rows
-with MAE **0.415270 kg/s**. These are VQR validation results; the production
-champion has not been selected and the test set has not been evaluated.
+with MAE **0.415270 kg/s**. These are VQR validation results.
+
+### Select and test the FuelCast champion
+
+Phase 8 compares the four normal-mode classical candidates and normal-mode VQR
+on the same 26,096 saved validation rows. QPSO-SVR remains deferred; quick-mode
+artifacts are smoke evidence. Selection verifies hashes, source provenance,
+ordered row IDs, full model predictions and recomputed overall and per-vessel
+metrics. It ranks by validation MAE with candidate-name tie breaks. The selected
+model and training-fitted preprocessor are packaged without refitting.
+
+```bash
+python -m greenfleet.ml_pipeline.evaluation select \
+  --run-dir /absolute/path/to/artifacts/fuelcast-phase1-20260928-002 \
+  --expected-version eb6a6ec011c1c9a2cbce21459e22be4c77ef84dd \
+  --expected-canonical-sha256 262428b4b2002435806f60aa9939755798dc9fe208b0c4b5d963a9200639cc65
+python -m greenfleet.ml_pipeline.evaluation verify \
+  --model-dir /absolute/path/to/artifacts/final_model
+python -m greenfleet.ml_pipeline.evaluation evaluate \
+  --run-dir /absolute/path/to/artifacts/fuelcast-phase1-20260928-002
+```
+
+The pinned run selected XGBoost with validation MAE **0.120164 kg/s**.
+The frozen package scored the untouched 26,098 test rows once: MAE
+**0.128541 kg/s**, RMSE **0.184163 kg/s**, R² **0.892183**. Per-vessel test
+MAE was Poseidon **0.111056**, Triton **0.246247**, and Ceto **0.102136** kg/s.
+The validation leaderboard, frozen selection, aligned test predictions and
+report are under `07_evaluation/`. The packaged inference model is under
+`artifacts/final_model/`. These outputs are ignored by Git. `evaluate` rejects
+a second test report.
 
 ### Run the existing ETL pipeline
 
